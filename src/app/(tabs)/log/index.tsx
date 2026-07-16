@@ -56,12 +56,15 @@ export default function LogWorkout() {
     if (!session?.user || draftSets.length === 0) return;
     setSaving(true);
     try {
-      await saveWorkout({
+      const { newPRs } = await saveWorkout({
         userId: session.user.id,
         sets: draftSets.map(({ exerciseId, weight, reps, unit }) => ({ exerciseId, weight, reps, unit })),
       });
       setDraftSets([]);
       setSelectedExercise(null);
+      if (newPRs.length > 0) {
+        Alert.alert('New PR!', `You hit ${newPRs.length} new personal record${newPRs.length > 1 ? 's' : ''}!`);
+      }
       router.push('/(tabs)/feed');
     } catch (e: any) {
       Alert.alert('Could not save workout', e.message ?? String(e));

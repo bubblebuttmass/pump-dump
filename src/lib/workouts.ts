@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { checkForPR } from './pr';
 
 export interface NewSetInput {
   exerciseId: string;
@@ -28,7 +29,12 @@ export async function getBest1RM(userId: string, exerciseId: string): Promise<nu
   return data?.estimated_1rm ?? null;
 }
 
-export async function saveWorkout(input: NewWorkoutInput): Promise<{ workoutId: string }> {
+export interface NewPR {
+  exerciseId: string;
+  estimated1RM: number;
+}
+
+export async function saveWorkout(input: NewWorkoutInput): Promise<{ workoutId: string; newPRs: NewPR[] }> {
   const { data: workout, error: workoutError } = await supabase
     .from('workouts')
     .insert({
@@ -50,8 +56,37 @@ export async function saveWorkout(input: NewWorkoutInput): Promise<{ workoutId: 
     unit: s.unit,
   }));
 
-  const { error: setsError } = await supabase.from('workout_sets').insert(setsToInsert);
+  const { data: insertedSets, error: setsError } = await supabase
+    .from('workout_sets')
+    .insert(setsToInsert)
+    .select();
   if (setsError) throw setsError;
 
-  return { workoutId: workout.id };
+  // Track the running best per exercise within this save, seeded from the DB.
+  const runningBest = new Map<string, number | null>();
+  const newPRs: NewPR[] = [];
+
+  for (const set of insertedSets) {
+    if (!runningBest.has(set.exercise_id)) {
+      runningBest.set(set.exercise_id, await getBest1RM(input.userId, set.exercise_id));
+    }
+    const priorBest = runningBest.get(set.exercise_id) ?? null;
+    const { isNewPR, estimated1RM } = checkForPR({ weight: set.weight, reps: set.reps }, priorBest);
+
+    if (isNewPR) {
+      const { error: prError } = await supabase.from('personal_records').insert({
+        user_id: input.userId,
+        exercise_id: set.exercise_id,
+        weight: set.weight,
+        reps: set.reps,
+        estimated_1rm: estimated1RM,
+        workout_set_id: set.id,
+      });
+      if (prError) throw prError;
+      runningBest.set(set.exercise_id, estimated1RM);
+      newPRs.push({ exerciseId: set.exercise_id, estimated1RM });
+    }
+  }
+
+  return { workoutId: workout.id, newPRs };
 }
