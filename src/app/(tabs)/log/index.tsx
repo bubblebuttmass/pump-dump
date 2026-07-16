@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, FlatList, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
+import NetInfo from '@react-native-community/netinfo';
 import { useAuth } from '../../../lib/auth';
 import { searchExercises, addCustomExercise, Exercise } from '../../../lib/exercises';
 import { saveWorkout, NewSetInput } from '../../../lib/workouts';
+import { enqueueWorkout } from '../../../lib/offlineQueue';
 
 interface DraftSet extends NewSetInput {
   exerciseName: string;
@@ -56,10 +58,21 @@ export default function LogWorkout() {
     if (!session?.user || draftSets.length === 0) return;
     setSaving(true);
     try {
-      const { newPRs } = await saveWorkout({
+      const netState = await NetInfo.fetch();
+      const workoutInput = {
         userId: session.user.id,
         sets: draftSets.map(({ exerciseId, weight, reps, unit }) => ({ exerciseId, weight, reps, unit })),
-      });
+      };
+
+      if (!netState.isConnected) {
+        await enqueueWorkout(workoutInput);
+        setDraftSets([]);
+        setSelectedExercise(null);
+        Alert.alert('Saved offline', "This workout will sync once you're back online.");
+        return;
+      }
+
+      const { newPRs } = await saveWorkout(workoutInput);
       setDraftSets([]);
       setSelectedExercise(null);
       if (newPRs.length > 0) {
