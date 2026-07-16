@@ -72,16 +72,17 @@ export async function getWorkoutDetail(workoutId: string, viewerId: string): Pro
     .from('workouts')
     .select(
       `id, created_at, users:user_id ( display_name ),
-       workout_sets ( id, weight, reps, unit, exercises ( name ) ),
-       likes ( user_id ),
-       personal_records ( workout_set_id )`
+       workout_sets ( id, weight, reps, unit, exercises ( name ), personal_records ( workout_set_id ) ),
+       likes ( user_id )`
     )
     .eq('id', workoutId)
     .single();
   if (error) throw error;
 
   const w = workout as any;
-  const prSetIds = new Set((w.personal_records ?? []).map((p: any) => p.workout_set_id));
+  const prSetIds = new Set(
+    (w.workout_sets ?? []).flatMap((s: any) => (s.personal_records ?? []).map((p: any) => p.workout_set_id))
+  );
 
   return {
     id: w.id,

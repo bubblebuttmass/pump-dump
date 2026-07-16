@@ -27,17 +27,18 @@ export async function getFeed(userId: string): Promise<FeedPost[]> {
     .select(
       `id, user_id, title, created_at,
        users:user_id ( display_name, avatar_url ),
-       workout_sets ( weight, reps, unit, exercises ( name ), id ),
+       workout_sets ( weight, reps, unit, exercises ( name ), id, personal_records ( workout_set_id ) ),
        likes ( user_id ),
-       comments ( id ),
-       personal_records ( workout_set_id )`
+       comments ( id )`
     )
     .order('created_at', { ascending: false })
     .limit(50);
   if (error) throw error;
 
   return (workouts ?? []).map((w: any) => {
-    const prSetIds = new Set((w.personal_records ?? []).map((p: any) => p.workout_set_id));
+    const prSetIds = new Set(
+      (w.workout_sets ?? []).flatMap((s: any) => (s.personal_records ?? []).map((p: any) => p.workout_set_id))
+    );
     return {
       id: w.id,
       user_id: w.user_id,

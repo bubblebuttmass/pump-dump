@@ -11,7 +11,12 @@ function RootNavigation() {
 
   useEffect(() => {
     if (loading) return;
-    const inAuthGroup = segments[0] === '(auth)';
+    // The bare root path is handled declaratively by src/app/index.tsx's
+    // <Redirect>. Racing an imperative redirect here against that one
+    // corrupts the web navigator's stack, so skip it.
+    const [first] = segments;
+    if (first === undefined) return;
+    const inAuthGroup = first === '(auth)';
 
     if (!session && !inAuthGroup) {
       router.replace('/(auth)/login');
