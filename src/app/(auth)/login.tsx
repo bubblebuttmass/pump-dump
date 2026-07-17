@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, Pressable, StyleSheet, Alert, Platform } from 'react-native';
+import { View, TextInput, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Link, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from '../../lib/supabase';
+import { showAlert } from '../../lib/alert';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -17,7 +18,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setSubmitting(false);
     if (error) {
-      Alert.alert('Login failed', error.message);
+      showAlert('Login failed', error.message);
       return;
     }
     router.replace('/(tabs)/feed');
@@ -29,7 +30,7 @@ export default function Login() {
       options: { redirectTo: 'lifterapp://auth-callback', skipBrowserRedirect: true },
     });
     if (error || !data?.url) {
-      Alert.alert('Google sign-in failed', error?.message ?? 'No auth URL returned');
+      showAlert('Google sign-in failed', error?.message ?? 'No auth URL returned');
       return;
     }
     const result = await WebBrowser.openAuthSessionAsync(data.url, 'lifterapp://auth-callback');
@@ -57,7 +58,7 @@ export default function Login() {
         ],
       });
       if (!credential.identityToken) {
-        Alert.alert('Apple sign-in failed', 'No identity token returned');
+        showAlert('Apple sign-in failed', 'No identity token returned');
         return;
       }
       const { error } = await supabase.auth.signInWithIdToken({
@@ -65,12 +66,12 @@ export default function Login() {
         token: credential.identityToken,
       });
       if (error) {
-        Alert.alert('Apple sign-in failed', error.message);
+        showAlert('Apple sign-in failed', error.message);
         return;
       }
       router.replace('/(tabs)/feed');
     } catch (e: any) {
-      if (e.code !== 'ERR_REQUEST_CANCELED') Alert.alert('Apple sign-in failed', String(e));
+      if (e.code !== 'ERR_REQUEST_CANCELED') showAlert('Apple sign-in failed', String(e));
     }
   }
 

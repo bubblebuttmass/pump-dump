@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
 import { Link, router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { showAlert } from '../../lib/alert';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -10,14 +11,14 @@ export default function Signup() {
 
   async function handleSignup() {
     if (password.length < 8) {
-      Alert.alert('Password too short', 'Use at least 8 characters.');
+      showAlert('Password too short', 'Use at least 8 characters.');
       return;
     }
     setSubmitting(true);
     const { error } = await supabase.auth.signUp({ email, password });
     setSubmitting(false);
     if (error) {
-      Alert.alert('Sign up failed', error.message);
+      showAlert('Sign up failed', error.message);
       return;
     }
     router.replace('/(auth)/onboarding');

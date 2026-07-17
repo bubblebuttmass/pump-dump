@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, FlatList, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, FlatList, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { useAuth } from '../../../lib/auth';
 import { searchExercises, addCustomExercise, Exercise } from '../../../lib/exercises';
 import { saveWorkout, NewSetInput } from '../../../lib/workouts';
 import { enqueueWorkout } from '../../../lib/offlineQueue';
+import { showAlert } from '../../../lib/alert';
 
 interface DraftSet extends NewSetInput {
   exerciseName: string;
@@ -68,7 +69,7 @@ export default function LogWorkout() {
         await enqueueWorkout(workoutInput);
         setDraftSets([]);
         setSelectedExercise(null);
-        Alert.alert('Saved offline', "This workout will sync once you're back online.");
+        showAlert('Saved offline', "This workout will sync once you're back online.");
         return;
       }
 
@@ -76,11 +77,11 @@ export default function LogWorkout() {
       setDraftSets([]);
       setSelectedExercise(null);
       if (newPRs.length > 0) {
-        Alert.alert('New PR!', `You hit ${newPRs.length} new personal record${newPRs.length > 1 ? 's' : ''}!`);
+        showAlert('New PR!', `You hit ${newPRs.length} new personal record${newPRs.length > 1 ? 's' : ''}!`);
       }
       router.push('/(tabs)/feed');
     } catch (e: any) {
-      Alert.alert('Could not save workout', e.message ?? String(e));
+      showAlert('Could not save workout', e.message ?? String(e));
     } finally {
       setSaving(false);
     }

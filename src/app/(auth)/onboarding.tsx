@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, Pressable, Image, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, Text, Pressable, Image, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
 import { uploadAvatar } from '../../lib/storage';
 import { useAuth } from '../../lib/auth';
+import { showAlert } from '../../lib/alert';
 
 export default function Onboarding() {
   const { session } = useAuth();
@@ -25,7 +26,7 @@ export default function Onboarding() {
   async function handleSave() {
     if (!session?.user) return;
     if (displayName.trim().length === 0) {
-      Alert.alert('Display name required');
+      showAlert('Display name required');
       return;
     }
     setSubmitting(true);
@@ -41,7 +42,7 @@ export default function Onboarding() {
 
       router.replace('/(tabs)/feed');
     } catch (e: any) {
-      Alert.alert('Could not save profile', e.message ?? String(e));
+      showAlert('Could not save profile', e.message ?? String(e));
     } finally {
       setSubmitting(false);
     }
