@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, RefreshControl, Pressable } from 'react-native';
+import { View, Text, FlatList, Image, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { useFocusEffect, router } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
 import { getFeed, FeedPost } from '../../../lib/feed';
@@ -46,6 +46,7 @@ export default function Feed() {
               <Text style={styles.name}>{item.display_name}</Text>
               {item.hasPR && <Text style={styles.prBadge}>New PR!</Text>}
             </View>
+            {item.photo_url && <Image source={{ uri: item.photo_url }} style={styles.photo} />}
             {item.sets.slice(0, 3).map((s, i) => (
               <Text key={i} style={styles.setLine}>
                 {s.exercise_name}: {s.weight}
@@ -70,6 +71,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   name: { fontWeight: '700', fontSize: 16 },
   prBadge: { backgroundColor: '#ffd700', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, fontSize: 12 },
+  photo: { width: '100%', height: 220, borderRadius: 8, marginTop: 8 },
   setLine: { color: '#333', marginTop: 4 },
   more: { color: '#888', marginTop: 4 },
   meta: { color: '#888', marginTop: 8, fontSize: 12 },

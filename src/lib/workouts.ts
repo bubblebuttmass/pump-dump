@@ -13,6 +13,7 @@ export interface NewWorkoutInput {
   title?: string;
   notes?: string;
   durationMin?: number;
+  photoUrl?: string;
   sets: NewSetInput[];
 }
 
@@ -42,6 +43,7 @@ export async function saveWorkout(input: NewWorkoutInput): Promise<{ workoutId: 
       title: input.title ?? null,
       notes: input.notes ?? null,
       duration_min: input.durationMin ?? null,
+      photo_url: input.photoUrl ?? null,
     })
     .select()
     .single();

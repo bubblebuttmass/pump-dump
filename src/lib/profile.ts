@@ -64,3 +64,21 @@ export async function getOwnProfile(userId: string): Promise<ProfileSummary> {
     recentWorkouts,
   };
 }
+
+export interface ProfileUpdate {
+  displayName: string;
+  bio: string;
+  avatarUrl?: string;
+}
+
+export async function updateProfile(userId: string, update: ProfileUpdate): Promise<void> {
+  const { error } = await supabase
+    .from('users')
+    .update({
+      display_name: update.displayName.trim(),
+      bio: update.bio.trim().length > 0 ? update.bio.trim() : null,
+      ...(update.avatarUrl ? { avatar_url: update.avatarUrl } : {}),
+    })
+    .eq('id', userId);
+  if (error) throw error;
+}

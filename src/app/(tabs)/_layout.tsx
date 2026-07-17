@@ -7,6 +7,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="log" options={{ title: 'Log' }} />
       <Tabs.Screen name="search" options={{ title: 'Search' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen name="profile/edit" options={{ href: null }} />
     </Tabs>
   );
 }

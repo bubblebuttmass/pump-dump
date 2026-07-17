@@ -30,13 +30,18 @@ export default function Profile() {
           <View style={[styles.avatar, styles.avatarPlaceholder]} />
         )}
         <Text style={styles.name}>{profile.display_name}</Text>
-        {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+        <Text style={profile.bio ? styles.bio : styles.bioEmpty}>{profile.bio ?? 'No bio yet'}</Text>
         <Text style={styles.counts}>
           {profile.followerCount} followers · {profile.followingCount} following
         </Text>
-        <Pressable onPress={handleSignOut}>
-          <Text style={styles.signOut}>Sign out</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable style={styles.editButton} onPress={() => router.push('/(tabs)/profile/edit')}>
+            <Text style={styles.editButtonText}>Edit Profile</Text>
+          </Pressable>
+          <Pressable onPress={handleSignOut}>
+            <Text style={styles.signOut}>Sign out</Text>
+          </Pressable>
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>Personal Records</Text>
@@ -77,9 +82,13 @@ const styles = StyleSheet.create({
   avatar: { width: 80, height: 80, borderRadius: 40 },
   avatarPlaceholder: { backgroundColor: '#eee' },
   name: { fontSize: 20, fontWeight: '700', marginTop: 8 },
-  bio: { color: '#666', marginTop: 4 },
+  bio: { color: '#666', marginTop: 4, textAlign: 'center' },
+  bioEmpty: { color: '#aaa', marginTop: 4, fontStyle: 'italic' },
   counts: { color: '#888', marginTop: 8 },
-  signOut: { color: '#cc0000', marginTop: 12 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 12 },
+  editButton: { backgroundColor: '#f5f5f5', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6 },
+  editButtonText: { color: '#111', fontWeight: '600' },
+  signOut: { color: '#cc0000' },
   sectionTitle: { fontWeight: '700', fontSize: 16, marginTop: 16, marginBottom: 8 },
   prCard: { padding: 12, backgroundColor: '#f5f5f5', borderRadius: 8, marginRight: 8 },
   prExercise: { fontWeight: '600' },

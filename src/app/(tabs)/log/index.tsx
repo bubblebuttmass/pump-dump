@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, FlatList, Image, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
 import { searchExercises, addCustomExercise, Exercise } from '../../../lib/exercises';
 import { saveWorkout, NewSetInput } from '../../../lib/workouts';
 import { enqueueWorkout } from '../../../lib/offlineQueue';
 import { showAlert } from '../../../lib/alert';
+import { uploadWorkoutPhoto } from '../../../lib/storage';
 
 interface DraftSet extends NewSetInput {
   exerciseName: string;
@@ -21,7 +23,28 @@ export default function LogWorkout() {
   const [reps, setReps] = useState('');
   const [unit, setUnit] = useState<'kg' | 'lb'>('lb');
   const [draftSets, setDraftSets] = useState<DraftSet[]>([]);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  async function handleTakePhoto() {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      showAlert('Camera access needed', 'Enable camera access in settings to snap your pump.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+    if (!result.canceled) setPhotoUri(result.assets[0].uri);
+  }
+
+  async function handleChoosePhoto() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (!result.canceled) setPhotoUri(result.assets[0].uri);
+  }
 
   async function handleSearch(text: string) {
     setSearchQuery(text);
@@ -60,22 +83,30 @@ export default function LogWorkout() {
     setSaving(true);
     try {
       const netState = await NetInfo.fetch();
-      const workoutInput = {
-        userId: session.user.id,
-        sets: draftSets.map(({ exerciseId, weight, reps, unit }) => ({ exerciseId, weight, reps, unit })),
-      };
 
       if (!netState.isConnected) {
-        await enqueueWorkout(workoutInput);
+        // Photo upload requires a network round trip, so offline saves skip
+        // the photo rather than trying to defer the upload itself.
+        await enqueueWorkout({
+          userId: session.user.id,
+          sets: draftSets.map(({ exerciseId, weight, reps, unit }) => ({ exerciseId, weight, reps, unit })),
+        });
         setDraftSets([]);
         setSelectedExercise(null);
-        showAlert('Saved offline', "This workout will sync once you're back online.");
+        setPhotoUri(null);
+        showAlert('Saved offline', "This workout will sync once you're back online (without the photo).");
         return;
       }
 
-      const { newPRs } = await saveWorkout(workoutInput);
+      const photoUrl = photoUri ? await uploadWorkoutPhoto(session.user.id, photoUri) : undefined;
+      const { newPRs } = await saveWorkout({
+        userId: session.user.id,
+        photoUrl,
+        sets: draftSets.map(({ exerciseId, weight, reps, unit }) => ({ exerciseId, weight, reps, unit })),
+      });
       setDraftSets([]);
       setSelectedExercise(null);
+      setPhotoUri(null);
       if (newPRs.length > 0) {
         showAlert('New PR!', `You hit ${newPRs.length} new personal record${newPRs.length > 1 ? 's' : ''}!`);
       }
@@ -90,6 +121,24 @@ export default function LogWorkout() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Log Workout</Text>
+
+      <View style={styles.photoSection}>
+        {photoUri ? (
+          <Pressable onPress={() => setPhotoUri(null)}>
+            <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+            <Text style={styles.link}>Remove photo</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.row}>
+            <Pressable style={styles.photoButton} onPress={handleTakePhoto}>
+              <Text style={styles.photoButtonText}>Snap your pump</Text>
+            </Pressable>
+            <Pressable style={styles.photoButton} onPress={handleChoosePhoto}>
+              <Text style={styles.photoButtonText}>Choose photo</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
 
       {!selectedExercise ? (
         <>
@@ -181,4 +230,8 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontWeight: '600' },
   link: { color: '#0066cc', marginTop: 8 },
   setRow: { paddingVertical: 6 },
+  photoSection: { marginBottom: 16 },
+  photoButton: { flex: 1, backgroundColor: '#f5f5f5', padding: 14, borderRadius: 8, alignItems: 'center' },
+  photoButtonText: { color: '#111', fontWeight: '600' },
+  photoPreview: { width: '100%', height: 200, borderRadius: 8 },
 });

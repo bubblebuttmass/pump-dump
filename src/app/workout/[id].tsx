@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, TextInput, Pressable, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TextInput, Pressable, Image, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useFocusEffect, Stack } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { getWorkoutDetail, WorkoutDetail, toggleLike, getComments, addComment, Comment } from '../../lib/social';
@@ -49,11 +49,14 @@ export default function WorkoutDetailScreen() {
         data={detail.sets}
         keyExtractor={(_, i) => String(i)}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.name}>{detail.display_name}</Text>
-            <Pressable onPress={handleToggleLike}>
-              <Text style={styles.like}>{detail.likedByMe ? '♥' : '♡'} {detail.likeCount}</Text>
-            </Pressable>
+          <View>
+            <View style={styles.header}>
+              <Text style={styles.name}>{detail.display_name}</Text>
+              <Pressable onPress={handleToggleLike}>
+                <Text style={styles.like}>{detail.likedByMe ? '♥' : '♡'} {detail.likeCount}</Text>
+              </Pressable>
+            </View>
+            {detail.photo_url && <Image source={{ uri: detail.photo_url }} style={styles.photo} />}
           </View>
         }
         renderItem={({ item }) => (
@@ -94,6 +97,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   name: { fontSize: 20, fontWeight: '700' },
   like: { fontSize: 16 },
+  photo: { width: '100%', height: 280, borderRadius: 8, marginBottom: 12 },
   setLine: { paddingVertical: 6, borderBottomWidth: 1, borderColor: '#eee' },
   comments: { marginTop: 24 },
   commentsTitle: { fontWeight: '700', marginBottom: 8 },
