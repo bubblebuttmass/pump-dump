@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../../lib/auth';
 import { searchUsers, isFollowing, follow, unfollow, UserResult } from '../../../lib/social-graph';
 
@@ -33,7 +34,7 @@ export default function Search() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <TextInput
         style={styles.input}
         placeholder="Search lifters by name..."
@@ -52,7 +53,7 @@ export default function Search() {
           </View>
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

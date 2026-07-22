@@ -13,6 +13,7 @@ export interface FeedPost {
   display_name: string;
   avatar_url: string | null;
   title: string | null;
+  caption: string | null;
   photo_url: string | null;
   created_at: string;
   sets: FeedSet[];
@@ -26,7 +27,7 @@ export async function getFeed(userId: string): Promise<FeedPost[]> {
   const { data: workouts, error } = await supabase
     .from('workouts')
     .select(
-      `id, user_id, title, photo_url, created_at,
+      `id, user_id, title, caption, photo_url, created_at,
        users:user_id ( display_name, avatar_url ),
        workout_sets ( weight, reps, unit, exercises ( name ), id, personal_records ( workout_set_id ) ),
        likes ( user_id ),
@@ -46,6 +47,7 @@ export async function getFeed(userId: string): Promise<FeedPost[]> {
       display_name: w.users?.display_name ?? 'Unknown',
       avatar_url: w.users?.avatar_url ?? null,
       title: w.title,
+      caption: w.caption ?? null,
       photo_url: w.photo_url ?? null,
       created_at: w.created_at,
       sets: (w.workout_sets ?? []).map((s: any) => ({

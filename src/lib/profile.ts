@@ -12,6 +12,7 @@ export interface ProfileSummary {
   display_name: string;
   avatar_url: string | null;
   bio: string | null;
+  traits: string[];
   followerCount: number;
   followingCount: number;
   prList: PRSummary[];
@@ -21,7 +22,7 @@ export interface ProfileSummary {
 export async function getOwnProfile(userId: string): Promise<ProfileSummary> {
   const { data: user, error: userError } = await supabase
     .from('users')
-    .select('display_name, avatar_url, bio')
+    .select('display_name, avatar_url, bio, traits')
     .eq('id', userId)
     .single();
   if (userError) throw userError;
@@ -58,6 +59,7 @@ export async function getOwnProfile(userId: string): Promise<ProfileSummary> {
     display_name: user.display_name,
     avatar_url: user.avatar_url,
     bio: user.bio,
+    traits: user.traits ?? [],
     followerCount: followerCount ?? 0,
     followingCount: followingCount ?? 0,
     prList: Array.from(bestPerExercise.values()),
@@ -68,6 +70,7 @@ export async function getOwnProfile(userId: string): Promise<ProfileSummary> {
 export interface ProfileUpdate {
   displayName: string;
   bio: string;
+  traits: string[];
   avatarUrl?: string;
 }
 
@@ -77,6 +80,7 @@ export async function updateProfile(userId: string, update: ProfileUpdate): Prom
     .update({
       display_name: update.displayName.trim(),
       bio: update.bio.trim().length > 0 ? update.bio.trim() : null,
+      traits: update.traits,
       ...(update.avatarUrl ? { avatar_url: update.avatarUrl } : {}),
     })
     .eq('id', userId);

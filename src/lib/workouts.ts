@@ -11,6 +11,7 @@ export interface NewSetInput {
 export interface NewWorkoutInput {
   userId: string;
   title?: string;
+  caption?: string;
   notes?: string;
   durationMin?: number;
   photoUrl?: string;
@@ -41,6 +42,7 @@ export async function saveWorkout(input: NewWorkoutInput): Promise<{ workoutId: 
     .insert({
       user_id: input.userId,
       title: input.title ?? null,
+      caption: input.caption ?? null,
       notes: input.notes ?? null,
       duration_min: input.durationMin ?? null,
       photo_url: input.photoUrl ?? null,
@@ -48,6 +50,12 @@ export async function saveWorkout(input: NewWorkoutInput): Promise<{ workoutId: 
     .select()
     .single();
   if (workoutError) throw workoutError;
+
+  // Logging lifts is optional now -- a pump pic with just a caption is a
+  // complete post, so skip the (empty) insert rather than send it.
+  if (input.sets.length === 0) {
+    return { workoutId: workout.id, newPRs: [] };
+  }
 
   const setsToInsert = input.sets.map((s, index) => ({
     workout_id: workout.id,

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { flushQueue } from '../lib/offlineQueue';
 
@@ -37,8 +38,10 @@ function RootNavigation() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootNavigation />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <RootNavigation />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

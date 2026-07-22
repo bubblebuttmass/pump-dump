@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, Image, FlatList, StyleSheet, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, router } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../lib/auth';
@@ -19,10 +20,10 @@ export default function Profile() {
     await supabase.auth.signOut();
   }
 
-  if (!profile) return <View style={styles.container} />;
+  if (!profile) return <SafeAreaView style={styles.container} edges={['top']} />;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         {profile.avatar_url ? (
           <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
@@ -31,6 +32,15 @@ export default function Profile() {
         )}
         <Text style={styles.name}>{profile.display_name}</Text>
         <Text style={profile.bio ? styles.bio : styles.bioEmpty}>{profile.bio ?? 'No bio yet'}</Text>
+        {profile.traits.length > 0 && (
+          <View style={styles.traitRow}>
+            {profile.traits.map((trait) => (
+              <View key={trait} style={styles.traitChip}>
+                <Text style={styles.traitChipText}>{trait}</Text>
+              </View>
+            ))}
+          </View>
+        )}
         <Text style={styles.counts}>
           {profile.followerCount} followers · {profile.followingCount} following
         </Text>
@@ -59,20 +69,25 @@ export default function Profile() {
         )}
       />
 
-      <Text style={styles.sectionTitle}>Recent Workouts</Text>
+      <Text style={styles.sectionTitle}>Recent Posts</Text>
       <FlatList
         data={profile.recentWorkouts}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.workoutRow}
-            onPress={() => router.push({ pathname: '/workout/[id]', params: { id: item.id } })}
-          >
-            <Text>{new Date(item.created_at).toLocaleDateString()} — {item.sets.length} sets</Text>
-          </Pressable>
-        )}
+        renderItem={({ item }) => {
+          const detail =
+            item.title ??
+            (item.sets.length > 0 ? `${item.sets.length} lift${item.sets.length > 1 ? 's' : ''} logged` : 'Pump post');
+          return (
+            <Pressable
+              style={styles.workoutRow}
+              onPress={() => router.push({ pathname: '/workout/[id]', params: { id: item.id } })}
+            >
+              <Text>{new Date(item.created_at).toLocaleDateString()} — {detail}</Text>
+            </Pressable>
+          );
+        }}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -84,6 +99,9 @@ const styles = StyleSheet.create({
   name: { fontSize: 20, fontWeight: '700', marginTop: 8 },
   bio: { color: '#666', marginTop: 4, textAlign: 'center' },
   bioEmpty: { color: '#aaa', marginTop: 4, fontStyle: 'italic' },
+  traitRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginTop: 10 },
+  traitChip: { backgroundColor: '#f0f0f0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  traitChipText: { fontSize: 12, fontWeight: '600', color: '#555' },
   counts: { color: '#888', marginTop: 8 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 12 },
   editButton: { backgroundColor: '#f5f5f5', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6 },

@@ -26,6 +26,7 @@ export default function Signup() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.brand}>Pump.io</Text>
       <Text style={styles.title}>Create account</Text>
       <TextInput
         style={styles.input}
@@ -54,6 +55,7 @@ export default function Signup() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 24 },
+  brand: { fontSize: 22, fontWeight: '700', color: '#4285F4', textAlign: 'center', marginBottom: 8 },
   title: { fontSize: 28, fontWeight: '700', marginBottom: 24 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
   button: { backgroundColor: '#111', padding: 14, borderRadius: 8, alignItems: 'center' },

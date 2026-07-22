@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "lifter-app",
-    "slug": "lifter-app",
+    "name": "Pump.io",
+    "slug": "pump-io",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

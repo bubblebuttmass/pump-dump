@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, Image, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useFocusEffect, Stack } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { getWorkoutDetail, WorkoutDetail, toggleLike, getComments, addComment, Comment } from '../../lib/social';
@@ -40,10 +41,10 @@ export default function WorkoutDetailScreen() {
     setCommentText('');
   }
 
-  if (!detail) return <View style={styles.container} />;
+  if (!detail) return <SafeAreaView style={styles.container} edges={['top']} />;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Stack.Screen options={{ title: detail.display_name }} />
       <FlatList
         data={detail.sets}
@@ -56,8 +57,14 @@ export default function WorkoutDetailScreen() {
                 <Text style={styles.like}>{detail.likedByMe ? '♥' : '♡'} {detail.likeCount}</Text>
               </Pressable>
             </View>
-            {detail.title && <Text style={styles.workoutTitle}>{detail.title}</Text>}
+            {detail.title && (
+              <View style={styles.groupPill}>
+                <Text style={styles.groupPillText}>{detail.title}</Text>
+              </View>
+            )}
             {detail.photo_url && <Image source={{ uri: detail.photo_url }} style={styles.photo} />}
+            {detail.caption && <Text style={styles.caption}>{detail.caption}</Text>}
+            {detail.sets.length > 0 && <Text style={styles.liftsHeading}>Lifts</Text>}
           </View>
         }
         renderItem={({ item }) => (
@@ -89,7 +96,7 @@ export default function WorkoutDetailScreen() {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -98,8 +105,18 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   name: { fontSize: 20, fontWeight: '700' },
   like: { fontSize: 16 },
-  workoutTitle: { fontWeight: '600', marginBottom: 8 },
+  groupPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  groupPillText: { fontSize: 11, fontWeight: '600', color: '#555' },
   photo: { width: '100%', height: 280, borderRadius: 8, marginBottom: 12 },
+  caption: { color: '#111', marginBottom: 12 },
+  liftsHeading: { fontWeight: '700', marginBottom: 4 },
   setLine: { paddingVertical: 6, borderBottomWidth: 1, borderColor: '#eee' },
   comments: { marginTop: 24 },
   commentsTitle: { fontWeight: '700', marginBottom: 8 },
