@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, TextInput, Text, Pressable, Image, StyleSheet } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
 import { getOwnProfile, updateProfile } from '../../../lib/profile';
@@ -58,7 +58,6 @@ export default function EditProfile() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Edit Profile' }} />
       <Pressable onPress={pickAvatar} style={styles.avatarPicker}>
         {newAvatarUri || avatarUrl ? (
           <Image source={{ uri: newAvatarUri ?? avatarUrl! }} style={styles.avatar} />

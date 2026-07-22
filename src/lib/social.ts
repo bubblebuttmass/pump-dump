@@ -61,6 +61,7 @@ export interface WorkoutDetailSet {
 export interface WorkoutDetail {
   id: string;
   display_name: string;
+  title: string | null;
   photo_url: string | null;
   created_at: string;
   sets: WorkoutDetailSet[];
@@ -72,7 +73,7 @@ export async function getWorkoutDetail(workoutId: string, viewerId: string): Pro
   const { data: workout, error } = await supabase
     .from('workouts')
     .select(
-      `id, created_at, photo_url, users:user_id ( display_name ),
+      `id, created_at, photo_url, title, users:user_id ( display_name ),
        workout_sets ( id, weight, reps, unit, exercises ( name ), personal_records ( workout_set_id ) ),
        likes ( user_id )`
     )
@@ -88,6 +89,7 @@ export async function getWorkoutDetail(workoutId: string, viewerId: string): Pro
   return {
     id: w.id,
     display_name: w.users?.display_name ?? 'Unknown',
+    title: w.title ?? null,
     photo_url: w.photo_url ?? null,
     created_at: w.created_at,
     sets: (w.workout_sets ?? []).map((s: any) => ({

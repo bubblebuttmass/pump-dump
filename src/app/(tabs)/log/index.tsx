@@ -24,6 +24,7 @@ export default function LogWorkout() {
   const [unit, setUnit] = useState<'kg' | 'lb'>('lb');
   const [draftSets, setDraftSets] = useState<DraftSet[]>([]);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
 
   async function handleTakePhoto() {
@@ -89,11 +90,13 @@ export default function LogWorkout() {
         // the photo rather than trying to defer the upload itself.
         await enqueueWorkout({
           userId: session.user.id,
+          title: title.trim() || undefined,
           sets: draftSets.map(({ exerciseId, weight, reps, unit }) => ({ exerciseId, weight, reps, unit })),
         });
         setDraftSets([]);
         setSelectedExercise(null);
         setPhotoUri(null);
+        setTitle('');
         showAlert('Saved offline', "This workout will sync once you're back online (without the photo).");
         return;
       }
@@ -101,12 +104,14 @@ export default function LogWorkout() {
       const photoUrl = photoUri ? await uploadWorkoutPhoto(session.user.id, photoUri) : undefined;
       const { newPRs } = await saveWorkout({
         userId: session.user.id,
+        title: title.trim() || undefined,
         photoUrl,
         sets: draftSets.map(({ exerciseId, weight, reps, unit }) => ({ exerciseId, weight, reps, unit })),
       });
       setDraftSets([]);
       setSelectedExercise(null);
       setPhotoUri(null);
+      setTitle('');
       if (newPRs.length > 0) {
         showAlert('New PR!', `You hit ${newPRs.length} new personal record${newPRs.length > 1 ? 's' : ''}!`);
       }
@@ -121,6 +126,13 @@ export default function LogWorkout() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Log Workout</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Workout title (optional) — e.g. Upper day"
+        value={title}
+        onChangeText={setTitle}
+      />
 
       <View style={styles.photoSection}>
         {photoUri ? (
@@ -209,7 +221,9 @@ export default function LogWorkout() {
 
       {draftSets.length > 0 && (
         <Pressable style={styles.button} onPress={handleSaveWorkout} disabled={saving}>
-          <Text style={styles.buttonText}>{saving ? 'Saving...' : `Save Workout (${draftSets.length} sets)`}</Text>
+          <Text style={styles.buttonText}>
+            {saving ? 'Saving...' : `Save Workout (${draftSets.length} set${draftSets.length > 1 ? 's' : ''})`}
+          </Text>
         </Pressable>
       )}
     </View>

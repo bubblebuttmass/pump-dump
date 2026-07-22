@@ -46,6 +46,7 @@ export default function Feed() {
               <Text style={styles.name}>{item.display_name}</Text>
               {item.hasPR && <Text style={styles.prBadge}>New PR!</Text>}
             </View>
+            {item.title && <Text style={styles.workoutTitle}>{item.title}</Text>}
             {item.photo_url && <Image source={{ uri: item.photo_url }} style={styles.photo} />}
             {item.sets.slice(0, 3).map((s, i) => (
               <Text key={i} style={styles.setLine}>
@@ -71,6 +72,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   name: { fontWeight: '700', fontSize: 16 },
   prBadge: { backgroundColor: '#ffd700', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, fontSize: 12 },
+  workoutTitle: { fontWeight: '600', marginTop: 4 },
   photo: { width: '100%', height: 220, borderRadius: 8, marginTop: 8 },
   setLine: { color: '#333', marginTop: 4 },
   more: { color: '#888', marginTop: 4 },

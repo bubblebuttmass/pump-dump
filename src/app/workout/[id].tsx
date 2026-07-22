@@ -56,6 +56,7 @@ export default function WorkoutDetailScreen() {
                 <Text style={styles.like}>{detail.likedByMe ? '♥' : '♡'} {detail.likeCount}</Text>
               </Pressable>
             </View>
+            {detail.title && <Text style={styles.workoutTitle}>{detail.title}</Text>}
             {detail.photo_url && <Image source={{ uri: detail.photo_url }} style={styles.photo} />}
           </View>
         }
@@ -97,6 +98,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   name: { fontSize: 20, fontWeight: '700' },
   like: { fontSize: 16 },
+  workoutTitle: { fontWeight: '600', marginBottom: 8 },
   photo: { width: '100%', height: 280, borderRadius: 8, marginBottom: 12 },
   setLine: { paddingVertical: 6, borderBottomWidth: 1, borderColor: '#eee' },
   comments: { marginTop: 24 },
