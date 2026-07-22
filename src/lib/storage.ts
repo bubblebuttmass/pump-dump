@@ -1,31 +1,45 @@
 import { supabase } from './supabase';
 
-export async function uploadAvatar(userId: string, localUri: string): Promise<string> {
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+
+// supabase-js's storage sub-client doesn't reliably pick up the current
+// session's access token in this React Native setup -- uploads went out
+// carrying only the anon key, which RLS correctly rejected as "new row
+// violates row-level security policy" (identical to an anon-only curl
+// request). Fetching the session token and hitting the Storage REST API
+// directly sidesteps that entirely.
+async function uploadToBucket(bucket: string, userId: string, localUri: string, prefix: string): Promise<string> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error('Not signed in');
+
   const response = await fetch(localUri);
   const blob = await response.blob();
-  const path = `${userId}/avatar-${Date.now()}.jpg`;
+  const path = `${userId}/${prefix}-${Date.now()}.jpg`;
 
-  const { error } = await supabase.storage.from('avatars').upload(path, blob, {
-    contentType: 'image/jpeg',
-    upsert: true,
+  const uploadResponse = await fetch(`${supabaseUrl}/storage/v1/object/${bucket}/${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: supabaseAnonKey,
+      'Content-Type': 'image/jpeg',
+    },
+    body: blob,
   });
-  if (error) throw error;
 
-  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
-  return data.publicUrl;
+  if (!uploadResponse.ok) {
+    const errorText = await uploadResponse.text();
+    throw new Error(`Upload failed: ${errorText}`);
+  }
+
+  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${path}`;
+}
+
+export async function uploadAvatar(userId: string, localUri: string): Promise<string> {
+  return uploadToBucket('avatars', userId, localUri, 'avatar');
 }
 
 export async function uploadWorkoutPhoto(userId: string, localUri: string): Promise<string> {
-  const response = await fetch(localUri);
-  const blob = await response.blob();
-  const path = `${userId}/workout-${Date.now()}.jpg`;
-
-  const { error } = await supabase.storage.from('workout-photos').upload(path, blob, {
-    contentType: 'image/jpeg',
-    upsert: true,
-  });
-  if (error) throw error;
-
-  const { data } = supabase.storage.from('workout-photos').getPublicUrl(path);
-  return data.publicUrl;
+  return uploadToBucket('workout-photos', userId, localUri, 'workout');
 }
