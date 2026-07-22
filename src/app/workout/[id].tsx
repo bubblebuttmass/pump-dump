@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, Image, StyleSheet } from 'react-native';
-import { useLocalSearchParams, useFocusEffect, Stack } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocalSearchParams, useFocusEffect, router } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { getWorkoutDetail, WorkoutDetail, toggleLike, getComments, addComment, Comment } from '../../lib/social';
 
@@ -40,14 +41,19 @@ export default function WorkoutDetailScreen() {
     setCommentText('');
   }
 
-  if (!detail) return <View style={styles.container} />;
+  if (!detail) return <SafeAreaView style={styles.container} edges={['top']} />;
 
   return (
-    <View style={styles.container}>
-      <Stack.Screen options={{ title: detail.display_name }} />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.backBar}>
+        <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Text style={styles.backButton}>‹ Back</Text>
+        </Pressable>
+      </View>
       <FlatList
         data={detail.sets}
         keyExtractor={(_, i) => String(i)}
+        contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View>
             <View style={styles.header}>
@@ -95,12 +101,15 @@ export default function WorkoutDetailScreen() {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1 },
+  backBar: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
+  backButton: { color: '#0066cc', fontSize: 16, fontWeight: '600' },
+  listContent: { padding: 16 },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   name: { fontSize: 20, fontWeight: '700' },
   like: { fontSize: 16 },
