@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, Image, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useFocusEffect, Stack } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { getWorkoutDetail, WorkoutDetail, toggleLike, getComments, addComment, Comment } from '../../lib/social';
@@ -41,10 +40,10 @@ export default function WorkoutDetailScreen() {
     setCommentText('');
   }
 
-  if (!detail) return <SafeAreaView style={styles.container} edges={['top']} />;
+  if (!detail) return <View style={styles.container} />;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <Stack.Screen options={{ title: detail.display_name }} />
       <FlatList
         data={detail.sets}
@@ -96,7 +95,7 @@ export default function WorkoutDetailScreen() {
           </View>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
