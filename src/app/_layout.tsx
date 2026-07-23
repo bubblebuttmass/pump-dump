@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Slot, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../lib/auth';
@@ -33,7 +33,19 @@ function RootNavigation() {
     return () => unsubscribe();
   }, []);
 
-  return <Slot />;
+  // A real Stack (not a bare Slot) so pushing into /workout or /user keeps
+  // (tabs) mounted underneath instead of tearing it down -- with Slot, only
+  // one top-level branch renders at a time, so leaving (tabs) entirely and
+  // coming back remounted the Tabs navigator fresh at its initial tab
+  // (Feed), losing whichever tab (e.g. Profile) the user actually came from.
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="workout" />
+      <Stack.Screen name="user" />
+    </Stack>
+  );
 }
 
 export default function RootLayout() {
