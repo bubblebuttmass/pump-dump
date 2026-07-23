@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, TextInput, Pressable, Image, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TextInput, Pressable, Image, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useFocusEffect, router } from 'expo-router';
 import { useAuth } from '../../lib/auth';
@@ -50,7 +50,13 @@ export default function WorkoutDetailScreen() {
           <Text style={styles.backButton}>‹ Back</Text>
         </Pressable>
       </View>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
       <FlatList
+        style={styles.flex}
         data={detail.sets}
         keyExtractor={(_, i) => String(i)}
         contentContainerStyle={styles.listContent}
@@ -101,12 +107,14 @@ export default function WorkoutDetailScreen() {
           </View>
         }
       />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  flex: { flex: 1 },
   backBar: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
   backButton: { color: '#0066cc', fontSize: 16, fontWeight: '600' },
   listContent: { padding: 16 },
