@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, Image, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useFocusEffect, router } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect, router, Href } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { getWorkoutDetail, WorkoutDetail, toggleLike, getComments, addComment, Comment } from '../../lib/social';
 
@@ -63,7 +63,9 @@ export default function WorkoutDetailScreen() {
         ListHeaderComponent={
           <View>
             <View style={styles.header}>
-              <Text style={styles.name}>{detail.display_name}</Text>
+              <Pressable onPress={() => router.push(`/user/${detail.user_id}` as Href)}>
+                <Text style={styles.name}>{detail.display_name}</Text>
+              </Pressable>
               <Pressable onPress={handleToggleLike}>
                 <Text style={styles.like}>{detail.likedByMe ? '♥' : '♡'} {detail.likeCount}</Text>
               </Pressable>

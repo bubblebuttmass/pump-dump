@@ -41,3 +41,21 @@ export async function unfollow(followerId: string, followeeId: string): Promise<
     .eq('followee_id', followeeId);
   if (error) throw error;
 }
+
+export async function getFollowers(userId: string): Promise<UserResult[]> {
+  const { data, error } = await supabase
+    .from('follows')
+    .select('users:follower_id ( id, display_name, avatar_url )')
+    .eq('followee_id', userId);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => row.users).filter(Boolean);
+}
+
+export async function getFollowing(userId: string): Promise<UserResult[]> {
+  const { data, error } = await supabase
+    .from('follows')
+    .select('users:followee_id ( id, display_name, avatar_url )')
+    .eq('follower_id', userId);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => row.users).filter(Boolean);
+}

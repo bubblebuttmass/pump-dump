@@ -3,7 +3,7 @@ import { View, TextInput, Text, Pressable, Image, ScrollView, StyleSheet } from 
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
-import { getOwnProfile, updateProfile } from '../../../lib/profile';
+import { getProfile, updateProfile } from '../../../lib/profile';
 import { uploadAvatar } from '../../../lib/storage';
 import { showAlert } from '../../../lib/alert';
 import { TRAIT_CATEGORIES } from '../../../lib/traits';
@@ -20,7 +20,7 @@ export default function EditProfile() {
 
   useEffect(() => {
     if (!session?.user) return;
-    getOwnProfile(session.user.id).then((profile) => {
+    getProfile(session.user.id).then((profile) => {
       setDisplayName(profile.display_name);
       setBio(profile.bio ?? '');
       setTraits(profile.traits);

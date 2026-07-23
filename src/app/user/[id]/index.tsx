@@ -1,29 +1,55 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, Image, FlatList, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Image, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, router } from 'expo-router';
-import { supabase } from '../../../lib/supabase';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
 import { getProfile, ProfileSummary } from '../../../lib/profile';
+import { isFollowing, follow, unfollow } from '../../../lib/social-graph';
 
-export default function Profile() {
+export default function UserProfile() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
+  const [followed, setFollowed] = useState(false);
+
+  const isOwnProfile = session?.user?.id === id;
+
+  const load = useCallback(async () => {
+    if (!id) return;
+    setProfile(await getProfile(id));
+    if (session?.user && !isOwnProfile) {
+      setFollowed(await isFollowing(session.user.id, id));
+    }
+  }, [id, session, isOwnProfile]);
 
   useFocusEffect(
     useCallback(() => {
-      if (session?.user) getProfile(session.user.id).then(setProfile);
-    }, [session])
+      load();
+    }, [load])
   );
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
+  async function handleToggleFollow() {
+    if (!session?.user || !id) return;
+    if (followed) {
+      await unfollow(session.user.id, id);
+    } else {
+      await follow(session.user.id, id);
+    }
+    setFollowed(!followed);
+    setProfile((prev) =>
+      prev ? { ...prev, followerCount: prev.followerCount + (followed ? -1 : 1) } : prev
+    );
   }
 
   if (!profile) return <SafeAreaView style={styles.container} edges={['top']} />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.backBar}>
+        <Pressable onPress={() => router.back()} hitSlop={12}>
+          <Text style={styles.backButton}>‹ Back</Text>
+        </Pressable>
+      </View>
       <View style={styles.header}>
         {profile.avatar_url ? (
           <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
@@ -42,26 +68,19 @@ export default function Profile() {
           </View>
         )}
         <View style={styles.countsRow}>
-          <Pressable
-            onPress={() => session?.user && router.push({ pathname: '/user/[id]/followers', params: { id: session.user.id } })}
-          >
+          <Pressable onPress={() => router.push({ pathname: '/user/[id]/followers', params: { id } })}>
             <Text style={styles.counts}>{profile.followerCount} followers</Text>
           </Pressable>
           <Text style={styles.counts}> · </Text>
-          <Pressable
-            onPress={() => session?.user && router.push({ pathname: '/user/[id]/following', params: { id: session.user.id } })}
-          >
+          <Pressable onPress={() => router.push({ pathname: '/user/[id]/following', params: { id } })}>
             <Text style={styles.counts}>{profile.followingCount} following</Text>
           </Pressable>
         </View>
-        <View style={styles.headerActions}>
-          <Pressable style={styles.editButton} onPress={() => router.push('/(tabs)/profile/edit')}>
-            <Text style={styles.editButtonText}>Edit Profile</Text>
+        {!isOwnProfile && (
+          <Pressable style={styles.followButton} onPress={handleToggleFollow}>
+            <Text style={styles.followButtonText}>{followed ? 'Unfollow' : 'Follow'}</Text>
           </Pressable>
-          <Pressable onPress={handleSignOut}>
-            <Text style={styles.signOut}>Sign out</Text>
-          </Pressable>
-        </View>
+        )}
       </View>
 
       <Text style={styles.sectionTitle}>Personal Records</Text>
@@ -96,14 +115,21 @@ export default function Profile() {
             </Pressable>
           );
         }}
+        ListEmptyComponent={
+          <Text style={styles.emptyPosts}>
+            {isOwnProfile ? 'No posts yet.' : "Follow to see this lifter's posts."}
+          </Text>
+        }
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  header: { alignItems: 'center', marginBottom: 24 },
+  container: { flex: 1 },
+  backBar: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
+  backButton: { color: '#0066cc', fontSize: 16, fontWeight: '600' },
+  header: { alignItems: 'center', marginBottom: 24, paddingHorizontal: 16 },
   avatar: { width: 80, height: 80, borderRadius: 40 },
   avatarPlaceholder: { backgroundColor: '#eee' },
   name: { fontSize: 20, fontWeight: '700', marginTop: 8 },
@@ -114,13 +140,12 @@ const styles = StyleSheet.create({
   traitChipText: { fontSize: 12, fontWeight: '600', color: '#555' },
   countsRow: { flexDirection: 'row', marginTop: 8 },
   counts: { color: '#888' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 12 },
-  editButton: { backgroundColor: '#f5f5f5', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6 },
-  editButtonText: { color: '#111', fontWeight: '600' },
-  signOut: { color: '#cc0000' },
-  sectionTitle: { fontWeight: '700', fontSize: 16, marginTop: 16, marginBottom: 8 },
-  prCard: { padding: 12, backgroundColor: '#f5f5f5', borderRadius: 8, marginRight: 8 },
+  followButton: { backgroundColor: '#111', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 6, marginTop: 12 },
+  followButtonText: { color: '#fff', fontWeight: '600' },
+  sectionTitle: { fontWeight: '700', fontSize: 16, marginTop: 16, marginBottom: 8, paddingHorizontal: 16 },
+  prCard: { padding: 12, backgroundColor: '#f5f5f5', borderRadius: 8, marginRight: 8, marginLeft: 16 },
   prExercise: { fontWeight: '600' },
   prValue: { color: '#333', marginTop: 4 },
-  workoutRow: { paddingVertical: 8, borderBottomWidth: 1, borderColor: '#eee' },
+  workoutRow: { paddingVertical: 8, paddingHorizontal: 16, borderBottomWidth: 1, borderColor: '#eee' },
+  emptyPosts: { color: '#888', paddingHorizontal: 16, fontStyle: 'italic' },
 });

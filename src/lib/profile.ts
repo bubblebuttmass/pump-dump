@@ -19,7 +19,7 @@ export interface ProfileSummary {
   recentWorkouts: FeedPost[];
 }
 
-export async function getOwnProfile(userId: string): Promise<ProfileSummary> {
+export async function getProfile(userId: string): Promise<ProfileSummary> {
   const { data: user, error: userError } = await supabase
     .from('users')
     .select('display_name, avatar_url, bio, traits')

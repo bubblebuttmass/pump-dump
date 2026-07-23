@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, Image, StyleSheet, RefreshControl, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, router } from 'expo-router';
+import { useFocusEffect, router, Href } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
 import { getFeed, FeedPost } from '../../../lib/feed';
 
@@ -45,7 +45,12 @@ export default function Feed() {
           >
             <View style={styles.headerRow}>
               <View style={styles.headerLeft}>
-                <Text style={styles.name}>{item.display_name}</Text>
+                <Pressable
+                  onPress={() => router.push(`/user/${item.user_id}` as Href)}
+                  hitSlop={8}
+                >
+                  <Text style={styles.name}>{item.display_name}</Text>
+                </Pressable>
                 {item.title && (
                   <View style={styles.groupPill}>
                     <Text style={styles.groupPillText}>{item.title}</Text>

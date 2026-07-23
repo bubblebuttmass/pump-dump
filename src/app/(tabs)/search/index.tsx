@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, Keyboard, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, Href } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
 import { searchUsers, isFollowing, follow, unfollow, UserResult } from '../../../lib/social-graph';
 
@@ -55,7 +56,12 @@ export default function Search() {
         }
         renderItem={({ item }) => (
           <View style={styles.row}>
-            <Text style={styles.name}>{item.display_name}</Text>
+            <Pressable
+              style={styles.nameArea}
+              onPress={() => router.push(`/user/${item.id}` as Href)}
+            >
+              <Text style={styles.name}>{item.display_name}</Text>
+            </Pressable>
             <Pressable style={styles.followButton} onPress={() => handleToggleFollow(item.id)}>
               <Text style={styles.followButtonText}>{followingMap[item.id] ? 'Unfollow' : 'Follow'}</Text>
             </Pressable>
@@ -77,6 +83,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#eee',
   },
+  nameArea: { flex: 1 },
   name: { fontSize: 16 },
   empty: { color: '#888', textAlign: 'center', marginTop: 32 },
   followButton: { backgroundColor: '#111', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6 },
