@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, Image, StyleSheet, RefreshControl, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, router, Href } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
 import { getFeed, FeedPost } from '../../../lib/feed';
+import { AnimatedScreen } from '../../../components/AnimatedScreen';
 
 export default function Feed() {
   const { session } = useAuth();
@@ -28,7 +28,7 @@ export default function Feed() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <AnimatedScreen style={styles.container}>
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
@@ -74,7 +74,7 @@ export default function Feed() {
           </Pressable>
         )}
       />
-    </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 

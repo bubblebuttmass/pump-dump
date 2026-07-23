@@ -7,6 +7,7 @@ import { getProfile, updateProfile } from '../../../lib/profile';
 import { uploadAvatar } from '../../../lib/storage';
 import { showAlert } from '../../../lib/alert';
 import { TRAIT_CATEGORIES } from '../../../lib/traits';
+import { AnimatedView } from '../../../components/AnimatedScreen';
 
 export default function EditProfile() {
   const { session } = useAuth();
@@ -64,7 +65,8 @@ export default function EditProfile() {
   if (loading) return <View style={styles.container} />;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
+    <AnimatedView style={styles.container}>
+    <ScrollView contentContainerStyle={styles.scroll}>
       <Pressable onPress={pickAvatar} style={styles.avatarPicker}>
         {newAvatarUri || avatarUrl ? (
           <Image source={{ uri: newAvatarUri ?? avatarUrl! }} style={styles.avatar} />
@@ -108,6 +110,7 @@ export default function EditProfile() {
         <Text style={styles.buttonText}>{saving ? 'Saving...' : 'Save'}</Text>
       </Pressable>
     </ScrollView>
+    </AnimatedView>
   );
 }
 

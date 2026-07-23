@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, Keyboard, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Href } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
 import { searchUsers, isFollowing, follow, unfollow, UserResult } from '../../../lib/social-graph';
+import { AnimatedScreen } from '../../../components/AnimatedScreen';
 
 export default function Search() {
   const { session } = useAuth();
@@ -35,7 +35,7 @@ export default function Search() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <AnimatedScreen style={styles.container}>
       <TextInput
         style={styles.input}
         placeholder="Search lifters by name..."
@@ -68,7 +68,7 @@ export default function Search() {
           </View>
         )}
       />
-    </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 

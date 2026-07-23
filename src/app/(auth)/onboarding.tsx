@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { uploadAvatar } from '../../lib/storage';
 import { useAuth } from '../../lib/auth';
 import { showAlert } from '../../lib/alert';
+import { AnimatedView } from '../../components/AnimatedScreen';
 
 export default function Onboarding() {
   const { session } = useAuth();
@@ -49,7 +50,7 @@ export default function Onboarding() {
   }
 
   return (
-    <View style={styles.container}>
+    <AnimatedView style={styles.container}>
       <Text style={styles.title}>Set up your profile</Text>
       <Pressable onPress={pickAvatar} style={styles.avatarPicker}>
         {avatarUri ? (
@@ -67,7 +68,7 @@ export default function Onboarding() {
       <Pressable style={styles.button} onPress={handleSave} disabled={submitting}>
         <Text style={styles.buttonText}>{submitting ? 'Saving...' : 'Continue'}</Text>
       </Pressable>
-    </View>
+    </AnimatedView>
   );
 }
 

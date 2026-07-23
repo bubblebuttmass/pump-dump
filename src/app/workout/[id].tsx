@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, Image, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useFocusEffect, router, Href } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { getWorkoutDetail, WorkoutDetail, toggleLike, getComments, addComment, Comment } from '../../lib/social';
+import { AnimatedScreen } from '../../components/AnimatedScreen';
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,10 +41,10 @@ export default function WorkoutDetailScreen() {
     setCommentText('');
   }
 
-  if (!detail) return <SafeAreaView style={styles.container} edges={['top']} />;
+  if (!detail) return <View style={styles.container} />;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <AnimatedScreen style={styles.container}>
       <View style={styles.backBar}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Text style={styles.backButton}>‹ Back</Text>
@@ -110,7 +110,7 @@ export default function WorkoutDetailScreen() {
         }
       />
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 

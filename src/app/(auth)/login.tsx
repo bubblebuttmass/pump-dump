@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from '../../lib/supabase';
 import { showAlert } from '../../lib/alert';
+import { AnimatedView } from '../../components/AnimatedScreen';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -76,7 +77,7 @@ export default function Login() {
   }
 
   return (
-    <View style={styles.container}>
+    <AnimatedView style={styles.container}>
       <Text style={styles.brand}>Pump.io</Text>
       <Text style={styles.title}>Log in</Text>
       <TextInput
@@ -112,7 +113,7 @@ export default function Login() {
       <Link href="/(auth)/signup" style={styles.link}>
         <Text>Need an account? Sign up</Text>
       </Link>
-    </View>
+    </AnimatedView>
   );
 }
 

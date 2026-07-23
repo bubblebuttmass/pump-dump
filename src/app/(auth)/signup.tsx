@@ -3,6 +3,7 @@ import { View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
 import { Link, router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { showAlert } from '../../lib/alert';
+import { AnimatedView } from '../../components/AnimatedScreen';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -25,7 +26,7 @@ export default function Signup() {
   }
 
   return (
-    <View style={styles.container}>
+    <AnimatedView style={styles.container}>
       <Text style={styles.brand}>Pump.io</Text>
       <Text style={styles.title}>Create account</Text>
       <TextInput
@@ -49,7 +50,7 @@ export default function Signup() {
       <Link href="/(auth)/login" style={styles.link}>
         <Text>Already have an account? Log in</Text>
       </Link>
-    </View>
+    </AnimatedView>
   );
 }
 

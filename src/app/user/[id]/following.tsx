@@ -1,9 +1,9 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams, Href } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
 import { getFollowing, isFollowing, follow, unfollow, UserResult } from '../../../lib/social-graph';
+import { AnimatedScreen } from '../../../components/AnimatedScreen';
 
 export default function Following() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,7 +34,7 @@ export default function Following() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <AnimatedScreen style={styles.container}>
       <View style={styles.backBar}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Text style={styles.backButton}>‹ Back</Text>
@@ -62,7 +62,7 @@ export default function Following() {
           </View>
         )}
       />
-    </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 

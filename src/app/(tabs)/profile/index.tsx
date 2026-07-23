@@ -5,6 +5,7 @@ import { useFocusEffect, router } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../lib/auth';
 import { getProfile, ProfileSummary } from '../../../lib/profile';
+import { AnimatedScreen } from '../../../components/AnimatedScreen';
 
 export default function Profile() {
   const { session } = useAuth();
@@ -23,7 +24,7 @@ export default function Profile() {
   if (!profile) return <SafeAreaView style={styles.container} edges={['top']} />;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <AnimatedScreen style={styles.container}>
       <View style={styles.header}>
         {profile.avatar_url ? (
           <Image source={{ uri: profile.avatar_url }} style={styles.avatar} />
@@ -97,7 +98,7 @@ export default function Profile() {
           );
         }}
       />
-    </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 

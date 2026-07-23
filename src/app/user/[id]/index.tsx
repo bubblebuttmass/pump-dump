@@ -1,10 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, Image, FlatList, Pressable, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
 import { getProfile, ProfileSummary } from '../../../lib/profile';
 import { isFollowing, follow, unfollow } from '../../../lib/social-graph';
+import { AnimatedScreen } from '../../../components/AnimatedScreen';
 
 export default function UserProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,10 +41,10 @@ export default function UserProfile() {
     );
   }
 
-  if (!profile) return <SafeAreaView style={styles.container} edges={['top']} />;
+  if (!profile) return <View style={styles.container} />;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <AnimatedScreen style={styles.container}>
       <View style={styles.backBar}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Text style={styles.backButton}>‹ Back</Text>
@@ -121,7 +121,7 @@ export default function UserProfile() {
           </Text>
         }
       />
-    </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 

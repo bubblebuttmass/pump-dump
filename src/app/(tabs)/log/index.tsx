@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, Image, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import * as ImagePicker from 'expo-image-picker';
@@ -10,6 +9,7 @@ import { saveWorkout, NewSetInput } from '../../../lib/workouts';
 import { enqueueWorkout } from '../../../lib/offlineQueue';
 import { showAlert } from '../../../lib/alert';
 import { uploadWorkoutPhoto } from '../../../lib/storage';
+import { AnimatedScreen } from '../../../components/AnimatedScreen';
 
 interface DraftSet extends NewSetInput {
   exerciseName: string;
@@ -137,7 +137,7 @@ export default function LogWorkout() {
   const canPost = !!photoUri || caption.trim().length > 0 || draftSets.length > 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <AnimatedScreen style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Share your pump</Text>
 
@@ -253,7 +253,7 @@ export default function LogWorkout() {
           <Text style={styles.buttonText}>{posting ? 'Posting...' : 'Share Pump'}</Text>
         </Pressable>
       </ScrollView>
-    </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 
