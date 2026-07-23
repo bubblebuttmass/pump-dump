@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, FlatList, Pressable, Keyboard, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../../lib/auth';
 import { searchUsers, isFollowing, follow, unfollow, UserResult } from '../../../lib/social-graph';
@@ -40,10 +40,19 @@ export default function Search() {
         placeholder="Search lifters by name..."
         value={query}
         onChangeText={handleSearch}
+        returnKeyType="search"
+        onSubmitEditing={Keyboard.dismiss}
       />
       <FlatList
         data={results}
         keyExtractor={(item) => item.id}
+        ListEmptyComponent={
+          query.trim().length > 0 ? (
+            <Text style={styles.empty}>No lifters found for "{query}"</Text>
+          ) : (
+            <Text style={styles.empty}>Search for lifters by name to follow them</Text>
+          )
+        }
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Text style={styles.name}>{item.display_name}</Text>
@@ -69,6 +78,7 @@ const styles = StyleSheet.create({
     borderColor: '#eee',
   },
   name: { fontSize: 16 },
+  empty: { color: '#888', textAlign: 'center', marginTop: 32 },
   followButton: { backgroundColor: '#111', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6 },
   followButtonText: { color: '#fff', fontWeight: '600' },
 });
