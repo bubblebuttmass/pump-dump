@@ -5,7 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
-import { getProfile, updateProfile } from '../lib/profile';
+import { getProfile, updatePrivacy } from '../lib/profile';
 import { getFollowRequests } from '../lib/social-graph';
 import { deleteAccount } from '../lib/account';
 import { showAlert } from '../lib/alert';
@@ -35,16 +35,7 @@ export default function Settings() {
     const previous = isPrivate;
     setIsPrivate(value);
     try {
-      const profile = await getProfile(session.user.id, session.user.id);
-      await updateProfile(session.user.id, {
-        displayName: profile.display_name,
-        bio: profile.bio ?? '',
-        gym: profile.gym ?? '',
-        favoriteLift: profile.favoriteLift ?? '',
-        yearsLifting: profile.yearsLifting != null ? String(profile.yearsLifting) : '',
-        isPrivate: value,
-        traits: profile.traits,
-      });
+      await updatePrivacy(session.user.id, value);
     } catch {
       setIsPrivate(previous);
     }

@@ -159,6 +159,14 @@ export interface ProfileUpdate {
   avatarUrl?: string;
 }
 
+// Settings' private-account toggle only needs to change one column -- routing
+// it through updateProfile would mean fetching the rest of the profile first
+// just to re-send fields that aren't changing, trading one round trip for two.
+export async function updatePrivacy(userId: string, isPrivate: boolean): Promise<void> {
+  const { error } = await supabase.from('users').update({ is_private: isPrivate }).eq('id', userId);
+  if (error) throw error;
+}
+
 export async function updateProfile(userId: string, update: ProfileUpdate): Promise<void> {
   const parsedYears = parseInt(update.yearsLifting, 10);
   const { error } = await supabase
