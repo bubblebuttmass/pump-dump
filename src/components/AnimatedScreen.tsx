@@ -1,21 +1,28 @@
-import React, { useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
 import { SafeAreaView, Edge } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
-import { useFocusEffect } from 'expo-router';
+import { useReducedMotion } from '../lib/useReducedMotion';
 
-// Re-fades on every focus (not just first mount) so tab switches and
-// stack pushes/pops all get the same smooth transition, including
-// returning to a screen React Navigation kept mounted in the background.
-function useFadeOnFocus() {
-  const opacity = useSharedValue(0);
+// Fades in once, on first mount, not on every focus. React Navigation keeps
+// tab/stack screens mounted after their first visit, so re-fading on every
+// focus meant every single tab switch replayed a 220ms dim-then-brighten
+// pulse -- with bottom-tabs having no transition of its own, that pulse was
+// the only thing visibly happening on tap, which read as flicker. A fresh
+// mount (first visit, or a new dynamic-route instance like a different
+// workout id) still gets the entrance fade; revisiting an already-mounted
+// screen now shows instantly, like every other polished app.
+function useFadeOnMount() {
+  const reducedMotion = useReducedMotion();
+  const opacity = useSharedValue(reducedMotion ? 1 : 0);
 
-  useFocusEffect(
-    useCallback(() => {
-      opacity.value = 0;
-      opacity.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.quad) });
-    }, [opacity])
-  );
+  useEffect(() => {
+    if (reducedMotion) {
+      opacity.value = 1;
+      return;
+    }
+    opacity.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.quad) });
+  }, [opacity, reducedMotion]);
 
   return useAnimatedStyle(() => ({ opacity: opacity.value }));
 }
@@ -29,7 +36,7 @@ interface AnimatedScreenProps {
 }
 
 export function AnimatedScreen({ children, style, edges = ['top'] }: AnimatedScreenProps) {
-  const animatedStyle = useFadeOnFocus();
+  const animatedStyle = useFadeOnMount();
   return (
     <AnimatedSafeAreaView edges={edges} style={[style, animatedStyle]}>
       {children}
@@ -43,6 +50,6 @@ interface AnimatedViewProps {
 }
 
 export function AnimatedView({ children, style }: AnimatedViewProps) {
-  const animatedStyle = useFadeOnFocus();
+  const animatedStyle = useFadeOnMount();
   return <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>;
 }

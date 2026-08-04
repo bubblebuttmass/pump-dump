@@ -43,3 +43,33 @@ export async function uploadAvatar(userId: string, localUri: string): Promise<st
 export async function uploadWorkoutPhoto(userId: string, localUri: string): Promise<string> {
   return uploadToBucket('workout-photos', userId, localUri, 'workout');
 }
+
+export async function uploadWorkoutPhotos(userId: string, localUris: string[]): Promise<string[]> {
+  return Promise.all(localUris.map((uri, i) => uploadToBucket('workout-photos', userId, uri, `workout-${i}`)));
+}
+
+// Best-effort: the DB row is the source of truth for whether a post exists,
+// so a failed cleanup here shouldn't block or fail the delete -- it would
+// just leave an orphaned file in storage, not a broken app state.
+export async function deleteWorkoutPhotos(urls: string[]): Promise<void> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) return;
+
+  const marker = '/object/public/workout-photos/';
+  await Promise.all(
+    urls.map(async (url) => {
+      const idx = url.indexOf(marker);
+      if (idx === -1) return;
+      const path = url.slice(idx + marker.length);
+      try {
+        await fetch(`${supabaseUrl}/storage/v1/object/workout-photos/${path}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}`, apikey: supabaseAnonKey },
+        });
+      } catch {
+        // orphaned file, not a broken app state -- see comment above
+      }
+    })
+  );
+}

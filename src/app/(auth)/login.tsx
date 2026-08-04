@@ -6,6 +6,8 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from '../../lib/supabase';
 import { showAlert } from '../../lib/alert';
 import { AnimatedView } from '../../components/AnimatedScreen';
+import { PressableScale } from '../../components/PressableScale';
+import { colors, radius, spacing, type as typeScale } from '../../lib/theme';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -78,11 +80,12 @@ export default function Login() {
 
   return (
     <AnimatedView style={styles.container}>
-      <Text style={styles.brand}>Pump.io</Text>
+      <Text style={styles.brand}>Pump Dump</Text>
       <Text style={styles.title}>Log in</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor={colors.textFaint}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -91,16 +94,17 @@ export default function Login() {
       <TextInput
         style={styles.input}
         placeholder="Password"
+        placeholderTextColor={colors.textFaint}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
-      <Pressable style={styles.button} onPress={handleLogin} disabled={submitting}>
+      <PressableScale style={styles.button} onPress={handleLogin} disabled={submitting} scaleTo={0.97}>
         <Text style={styles.buttonText}>{submitting ? 'Logging in...' : 'Log in'}</Text>
-      </Pressable>
-      <Pressable style={styles.oauthButton} onPress={handleGoogleLogin}>
+      </PressableScale>
+      <PressableScale style={styles.oauthButton} onPress={handleGoogleLogin} scaleTo={0.97}>
         <Text style={styles.buttonText}>Continue with Google</Text>
-      </Pressable>
+      </PressableScale>
       {Platform.OS === 'ios' && (
         <AppleAuthentication.AppleAuthenticationButton
           buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
@@ -110,20 +114,32 @@ export default function Login() {
           onPress={handleAppleLogin}
         />
       )}
+      <Link href="/(auth)/forgot-password" style={styles.link}>
+        <Text style={styles.linkText}>Forgot password?</Text>
+      </Link>
       <Link href="/(auth)/signup" style={styles.link}>
-        <Text>Need an account? Sign up</Text>
+        <Text style={styles.linkText}>Need an account? Sign up</Text>
       </Link>
     </AnimatedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24 },
-  brand: { fontSize: 22, fontWeight: '700', color: '#4285F4', textAlign: 'center', marginBottom: 8 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
-  button: { backgroundColor: '#111', padding: 14, borderRadius: 8, alignItems: 'center' },
-  oauthButton: { backgroundColor: '#4285F4', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 12 },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  link: { marginTop: 16, alignSelf: 'center' },
+  container: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.bg },
+  brand: { ...typeScale.subtitle, color: colors.primary, textAlign: 'center', marginBottom: spacing.sm },
+  title: { ...typeScale.display, color: colors.text, marginBottom: spacing.xl },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    color: colors.text,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center' },
+  oauthButton: { backgroundColor: colors.surfaceRaised, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.md },
+  buttonText: { color: colors.white, fontWeight: '700' },
+  link: { marginTop: spacing.lg, alignSelf: 'center' },
+  linkText: { color: colors.textMuted },
 });

@@ -4,6 +4,8 @@ import { Link, router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { showAlert } from '../../lib/alert';
 import { AnimatedView } from '../../components/AnimatedScreen';
+import { PressableScale } from '../../components/PressableScale';
+import { colors, radius, spacing, type as typeScale } from '../../lib/theme';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -27,11 +29,12 @@ export default function Signup() {
 
   return (
     <AnimatedView style={styles.container}>
-      <Text style={styles.brand}>Pump.io</Text>
+      <Text style={styles.brand}>Pump Dump</Text>
       <Text style={styles.title}>Create account</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor={colors.textFaint}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -40,26 +43,36 @@ export default function Signup() {
       <TextInput
         style={styles.input}
         placeholder="Password (min 8 characters)"
+        placeholderTextColor={colors.textFaint}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
-      <Pressable style={styles.button} onPress={handleSignup} disabled={submitting}>
+      <PressableScale style={styles.button} onPress={handleSignup} disabled={submitting} scaleTo={0.97}>
         <Text style={styles.buttonText}>{submitting ? 'Creating...' : 'Sign up'}</Text>
-      </Pressable>
+      </PressableScale>
       <Link href="/(auth)/login" style={styles.link}>
-        <Text>Already have an account? Log in</Text>
+        <Text style={styles.linkText}>Already have an account? Log in</Text>
       </Link>
     </AnimatedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24 },
-  brand: { fontSize: 22, fontWeight: '700', color: '#4285F4', textAlign: 'center', marginBottom: 8 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 24 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
-  button: { backgroundColor: '#111', padding: 14, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  link: { marginTop: 16, alignSelf: 'center' },
+  container: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.bg },
+  brand: { ...typeScale.subtitle, color: colors.primary, textAlign: 'center', marginBottom: spacing.sm },
+  title: { ...typeScale.display, color: colors.text, marginBottom: spacing.xl },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    color: colors.text,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center' },
+  buttonText: { color: colors.white, fontWeight: '700' },
+  link: { marginTop: spacing.lg, alignSelf: 'center' },
+  linkText: { color: colors.textMuted },
 });

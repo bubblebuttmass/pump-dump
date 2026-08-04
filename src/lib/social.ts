@@ -64,20 +64,22 @@ export interface WorkoutDetail {
   display_name: string;
   title: string | null;
   caption: string | null;
-  photo_url: string | null;
+  photos: string[];
   created_at: string;
   sets: WorkoutDetailSet[];
   likeCount: number;
   likedByMe: boolean;
+  bookmarkedByMe: boolean;
 }
 
 export async function getWorkoutDetail(workoutId: string, viewerId: string): Promise<WorkoutDetail> {
   const { data: workout, error } = await supabase
     .from('workouts')
     .select(
-      `id, user_id, created_at, photo_url, title, caption, users:user_id ( display_name ),
+      `id, user_id, created_at, photo_url, photo_urls, title, caption, users:user_id ( display_name ),
        workout_sets ( id, weight, reps, unit, exercises ( name ), personal_records ( workout_set_id ) ),
-       likes ( user_id )`
+       likes ( user_id ),
+       bookmarks ( user_id )`
     )
     .eq('id', workoutId)
     .single();
@@ -94,7 +96,7 @@ export async function getWorkoutDetail(workoutId: string, viewerId: string): Pro
     display_name: w.users?.display_name ?? 'Unknown',
     title: w.title ?? null,
     caption: w.caption ?? null,
-    photo_url: w.photo_url ?? null,
+    photos: w.photo_urls?.length > 0 ? w.photo_urls : w.photo_url ? [w.photo_url] : [],
     created_at: w.created_at,
     sets: (w.workout_sets ?? []).map((s: any) => ({
       exercise_name: s.exercises?.name ?? 'Exercise',
@@ -105,5 +107,6 @@ export async function getWorkoutDetail(workoutId: string, viewerId: string): Pro
     })),
     likeCount: (w.likes ?? []).length,
     likedByMe: (w.likes ?? []).some((l: any) => l.user_id === viewerId),
+    bookmarkedByMe: (w.bookmarks ?? []).some((b: any) => b.user_id === viewerId),
   };
 }

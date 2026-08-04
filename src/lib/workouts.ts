@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { checkForPR } from './pr';
+import { deleteWorkoutPhotos } from './storage';
 
 export interface NewSetInput {
   exerciseId: string;
@@ -14,21 +15,8 @@ export interface NewWorkoutInput {
   caption?: string;
   notes?: string;
   durationMin?: number;
-  photoUrl?: string;
+  photoUrls?: string[];
   sets: NewSetInput[];
-}
-
-export async function getBest1RM(userId: string, exerciseId: string): Promise<number | null> {
-  const { data, error } = await supabase
-    .from('personal_records')
-    .select('estimated_1rm')
-    .eq('user_id', userId)
-    .eq('exercise_id', exerciseId)
-    .order('estimated_1rm', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  return data?.estimated_1rm ?? null;
 }
 
 export interface NewPR {
@@ -45,7 +33,8 @@ export async function saveWorkout(input: NewWorkoutInput): Promise<{ workoutId: 
       caption: input.caption ?? null,
       notes: input.notes ?? null,
       duration_min: input.durationMin ?? null,
-      photo_url: input.photoUrl ?? null,
+      photo_url: input.photoUrls?.[0] ?? null,
+      photo_urls: input.photoUrls && input.photoUrls.length > 0 ? input.photoUrls : null,
     })
     .select()
     .single();
@@ -72,19 +61,41 @@ export async function saveWorkout(input: NewWorkoutInput): Promise<{ workoutId: 
     .select();
   if (setsError) throw setsError;
 
-  // Track the running best per exercise within this save, seeded from the DB.
+  // One query for every exercise's prior best instead of one per exercise --
+  // and one batched insert for every new PR found, instead of a round trip
+  // per PR. Both used to happen inside the set-by-set loop below.
+  const uniqueExerciseIds = [...new Set(insertedSets.map((s) => s.exercise_id))];
+  const { data: priorPRs, error: priorPRsError } = await supabase
+    .from('personal_records')
+    .select('exercise_id, estimated_1rm')
+    .eq('user_id', input.userId)
+    .in('exercise_id', uniqueExerciseIds);
+  if (priorPRsError) throw priorPRsError;
+
   const runningBest = new Map<string, number | null>();
+  for (const pr of priorPRs ?? []) {
+    const current = runningBest.get(pr.exercise_id);
+    if (current == null || pr.estimated_1rm > current) runningBest.set(pr.exercise_id, pr.estimated_1rm);
+  }
+
   const newPRs: NewPR[] = [];
+  const prRowsToInsert: {
+    user_id: string;
+    exercise_id: string;
+    weight: number;
+    reps: number;
+    estimated_1rm: number;
+    workout_set_id: string;
+  }[] = [];
 
   for (const set of insertedSets) {
-    if (!runningBest.has(set.exercise_id)) {
-      runningBest.set(set.exercise_id, await getBest1RM(input.userId, set.exercise_id));
-    }
     const priorBest = runningBest.get(set.exercise_id) ?? null;
     const { isNewPR, estimated1RM } = checkForPR({ weight: set.weight, reps: set.reps }, priorBest);
 
     if (isNewPR) {
-      const { error: prError } = await supabase.from('personal_records').insert({
+      runningBest.set(set.exercise_id, estimated1RM);
+      newPRs.push({ exerciseId: set.exercise_id, estimated1RM });
+      prRowsToInsert.push({
         user_id: input.userId,
         exercise_id: set.exercise_id,
         weight: set.weight,
@@ -92,11 +103,26 @@ export async function saveWorkout(input: NewWorkoutInput): Promise<{ workoutId: 
         estimated_1rm: estimated1RM,
         workout_set_id: set.id,
       });
-      if (prError) throw prError;
-      runningBest.set(set.exercise_id, estimated1RM);
-      newPRs.push({ exerciseId: set.exercise_id, estimated1RM });
     }
   }
 
+  if (prRowsToInsert.length > 0) {
+    const { error: prError } = await supabase.from('personal_records').insert(prRowsToInsert);
+    if (prError) throw prError;
+  }
+
   return { workoutId: workout.id, newPRs };
+}
+
+// workout_sets/likes/comments/bookmarks/notifications all cascade-delete on
+// workouts(id) already, so the row delete alone leaves the DB consistent.
+// personal_records.workout_set_id is ON DELETE SET NULL rather than
+// cascade -- a PR you hit stays a real PR even if you later delete the post
+// it came from, it just loses the link back to that specific post.
+export async function deleteWorkout(workoutId: string, photoUrls: string[]): Promise<void> {
+  const { error } = await supabase.from('workouts').delete().eq('id', workoutId);
+  if (error) throw error;
+  if (photoUrls.length > 0) {
+    await deleteWorkoutPhotos(photoUrls);
+  }
 }

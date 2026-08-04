@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, Pressable, Image, StyleSheet } from 'react-native';
+import { View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
@@ -7,6 +8,8 @@ import { uploadAvatar } from '../../lib/storage';
 import { useAuth } from '../../lib/auth';
 import { showAlert } from '../../lib/alert';
 import { AnimatedView } from '../../components/AnimatedScreen';
+import { PressableScale } from '../../components/PressableScale';
+import { colors, radius, spacing, type as typeScale } from '../../lib/theme';
 
 export default function Onboarding() {
   const { session } = useAuth();
@@ -52,41 +55,57 @@ export default function Onboarding() {
   return (
     <AnimatedView style={styles.container}>
       <Text style={styles.title}>Set up your profile</Text>
-      <Pressable onPress={pickAvatar} style={styles.avatarPicker}>
+      <PressableScale
+        onPress={pickAvatar}
+        style={styles.avatarPicker}
+        scaleTo={0.95}
+        accessibilityRole="button"
+        accessibilityLabel="Choose profile photo"
+      >
         {avatarUri ? (
-          <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          <Image source={{ uri: avatarUri }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" />
         ) : (
-          <Text>Choose photo</Text>
+          <Text style={styles.choosePhotoText}>Choose photo</Text>
         )}
-      </Pressable>
+      </PressableScale>
       <TextInput
         style={styles.input}
         placeholder="Display name"
+        placeholderTextColor={colors.textFaint}
         value={displayName}
         onChangeText={setDisplayName}
       />
-      <Pressable style={styles.button} onPress={handleSave} disabled={submitting}>
+      <PressableScale style={styles.button} onPress={handleSave} disabled={submitting} scaleTo={0.97}>
         <Text style={styles.buttonText}>{submitting ? 'Saving...' : 'Continue'}</Text>
-      </Pressable>
+      </PressableScale>
     </AnimatedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24 },
-  title: { fontSize: 24, fontWeight: '700', marginBottom: 24 },
+  container: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.bg },
+  title: { ...typeScale.display, color: colors.text, marginBottom: spacing.xl, textAlign: 'center' },
   avatarPicker: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#eee',
+    backgroundColor: colors.surfaceRaised,
     alignSelf: 'center',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   avatar: { width: 100, height: 100, borderRadius: 50 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 12 },
-  button: { backgroundColor: '#111', padding: 14, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: '600' },
+  choosePhotoText: { ...typeScale.caption, color: colors.textMuted },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    color: colors.text,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center' },
+  buttonText: { color: colors.white, fontWeight: '700' },
 });

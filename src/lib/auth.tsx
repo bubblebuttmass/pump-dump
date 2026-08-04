@@ -20,7 +20,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
+      // Token refreshes fire this with a new object every ~hour even though
+      // the signed-in user hasn't changed. Every screen's useFocusEffect
+      // depends on [session], so a fresh reference here silently re-ran
+      // every visible screen's fetch mid-session -- visible as flicker with
+      // no relation to actual navigation. Keep the same reference when the
+      // user is unchanged so React bails out and nothing re-fetches.
+      setSession((prev) => (prev?.user?.id === newSession?.user?.id ? prev : newSession));
     });
 
     return () => listener.subscription.unsubscribe();

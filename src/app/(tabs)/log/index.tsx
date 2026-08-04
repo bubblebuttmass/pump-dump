@@ -1,25 +1,34 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, Image, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
 import { useAuth } from '../../../lib/auth';
 import { searchExercises, addCustomExercise, Exercise } from '../../../lib/exercises';
 import { saveWorkout, NewSetInput } from '../../../lib/workouts';
 import { enqueueWorkout } from '../../../lib/offlineQueue';
 import { showAlert } from '../../../lib/alert';
-import { uploadWorkoutPhoto } from '../../../lib/storage';
+import { uploadWorkoutPhotos } from '../../../lib/storage';
+import { getBadgeStats } from '../../../lib/profile';
+import { computeBadges, Badge } from '../../../lib/badges';
 import { AnimatedScreen } from '../../../components/AnimatedScreen';
+import { PressableScale } from '../../../components/PressableScale';
+import { CelebrationModal } from '../../../components/CelebrationModal';
+import { colors, radius, spacing, type as typeScale } from '../../../lib/theme';
 
 interface DraftSet extends NewSetInput {
   exerciseName: string;
 }
 
 const MUSCLE_GROUPS = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core', 'Full Body', 'Cardio', 'Rest Day'];
+const MAX_PHOTOS = 3;
 
 export default function LogWorkout() {
   const { session } = useAuth();
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
   const [muscleGroup, setMuscleGroup] = useState<string | null>(null);
   const [showLifts, setShowLifts] = useState(false);
@@ -31,25 +40,34 @@ export default function LogWorkout() {
   const [unit, setUnit] = useState<'kg' | 'lb'>('lb');
   const [draftSets, setDraftSets] = useState<DraftSet[]>([]);
   const [posting, setPosting] = useState(false);
+  const [celebration, setCelebration] = useState<{ title: string; subtitle?: string; badges: Badge[] } | null>(null);
 
   async function handleTakePhoto() {
+    if (photoUris.length >= MAX_PHOTOS) return;
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
       showAlert('Camera access needed', 'Enable camera access in settings to snap your pump.');
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: true, aspect: [1, 1] });
-    if (!result.canceled) setPhotoUri(result.assets[0].uri);
+    if (!result.canceled) setPhotoUris((prev) => [...prev, result.assets[0].uri]);
   }
 
   async function handleChoosePhoto() {
+    if (photoUris.length >= MAX_PHOTOS) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.7,
-      allowsEditing: true,
-      aspect: [1, 1],
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_PHOTOS - photoUris.length,
     });
-    if (!result.canceled) setPhotoUri(result.assets[0].uri);
+    if (!result.canceled) {
+      setPhotoUris((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS));
+    }
+  }
+
+  function handleRemovePhoto(index: number) {
+    setPhotoUris((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSearch(text: string) {
@@ -85,7 +103,7 @@ export default function LogWorkout() {
   }
 
   function resetForm() {
-    setPhotoUri(null);
+    setPhotoUris([]);
     setCaption('');
     setMuscleGroup(null);
     setShowLifts(false);
@@ -114,19 +132,41 @@ export default function LogWorkout() {
         return;
       }
 
-      const photoUrl = photoUri ? await uploadWorkoutPhoto(session.user.id, photoUri) : undefined;
+      // beforeStats and the photo upload don't depend on each other --
+      // running them together overlaps the badge-stats round trip with
+      // the (usually much longer) upload instead of paying for both in
+      // sequence before the workout can even be saved.
+      const [beforeStats, photoUrls] = await Promise.all([
+        getBadgeStats(session.user.id),
+        photoUris.length > 0 ? uploadWorkoutPhotos(session.user.id, photoUris) : Promise.resolve(undefined),
+      ]);
       const { newPRs } = await saveWorkout({
         userId: session.user.id,
         title: muscleGroup ?? undefined,
         caption: caption.trim() || undefined,
-        photoUrl,
+        photoUrls,
         sets,
       });
       resetForm();
-      if (newPRs.length > 0) {
-        showAlert('New PR!', `You hit ${newPRs.length} new personal record${newPRs.length > 1 ? 's' : ''}!`);
+
+      const afterStats = await getBadgeStats(session.user.id);
+      const beforeBadges = computeBadges(beforeStats);
+      const afterBadges = computeBadges(afterStats);
+      const newlyEarned = afterBadges.filter((b) => !beforeBadges.some((pb) => pb.id === b.id));
+
+      if (newPRs.length > 0 || newlyEarned.length > 0) {
+        setCelebration({
+          title: newPRs.length > 0 ? 'New PR!' : 'Achievement Unlocked!',
+          subtitle:
+            newPRs.length > 0
+              ? `You hit ${newPRs.length} new personal record${newPRs.length > 1 ? 's' : ''}!`
+              : undefined,
+          badges: newlyEarned,
+        });
+      } else {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push('/(tabs)/feed');
       }
-      router.push('/(tabs)/feed');
     } catch (e: any) {
       showAlert('Could not share pump', e.message ?? String(e));
     } finally {
@@ -134,7 +174,12 @@ export default function LogWorkout() {
     }
   }
 
-  const canPost = !!photoUri || caption.trim().length > 0 || draftSets.length > 0;
+  function handleDismissCelebration() {
+    setCelebration(null);
+    router.push('/(tabs)/feed');
+  }
+
+  const canPost = photoUris.length > 0 || caption.trim().length > 0 || draftSets.length > 0;
 
   return (
     <AnimatedScreen style={styles.container}>
@@ -142,11 +187,31 @@ export default function LogWorkout() {
         <Text style={styles.title}>Share your pump</Text>
 
         <View style={styles.photoSection}>
-          {photoUri ? (
-            <Pressable onPress={() => setPhotoUri(null)}>
-              <Image source={{ uri: photoUri }} style={styles.photoPreview} />
-              <Text style={styles.link}>Remove photo</Text>
-            </Pressable>
+          {photoUris.length > 0 ? (
+            <>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbRow}>
+                {photoUris.map((uri, i) => (
+                  <View key={uri} style={styles.thumbWrap}>
+                    <Image source={{ uri }} style={styles.thumb} contentFit="cover" />
+                    <Pressable
+                      style={styles.thumbRemove}
+                      onPress={() => handleRemovePhoto(i)}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityLabel="Remove photo"
+                    >
+                      <Ionicons name="close" size={14} color={colors.white} />
+                    </Pressable>
+                  </View>
+                ))}
+                {photoUris.length < MAX_PHOTOS && (
+                  <Pressable style={styles.addMoreTile} onPress={handleChoosePhoto} accessibilityRole="button" accessibilityLabel="Add another photo">
+                    <Ionicons name="add" size={22} color={colors.textMuted} />
+                  </Pressable>
+                )}
+              </ScrollView>
+              <Text style={styles.photoCount}>{photoUris.length}/{MAX_PHOTOS} photos</Text>
+            </>
           ) : (
             <View style={styles.row}>
               <Pressable style={styles.photoButton} onPress={handleTakePhoto}>
@@ -175,6 +240,9 @@ export default function LogWorkout() {
               key={g}
               style={[styles.chip, muscleGroup === g && styles.chipSelected]}
               onPress={() => setMuscleGroup(muscleGroup === g ? null : g)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: muscleGroup === g }}
+              accessibilityLabel={g}
             >
               <Text style={[styles.chipText, muscleGroup === g && styles.chipTextSelected]}>{g}</Text>
             </Pressable>
@@ -249,46 +317,86 @@ export default function LogWorkout() {
           </View>
         )}
 
-        <Pressable style={styles.button} onPress={handlePost} disabled={posting || !canPost}>
+        <PressableScale style={styles.button} onPress={handlePost} disabled={posting || !canPost} scaleTo={0.97}>
           <Text style={styles.buttonText}>{posting ? 'Posting...' : 'Share Pump'}</Text>
-        </Pressable>
+        </PressableScale>
       </ScrollView>
+      <CelebrationModal
+        visible={celebration !== null}
+        title={celebration?.title ?? ''}
+        subtitle={celebration?.subtitle}
+        badges={celebration?.badges ?? []}
+        onDismiss={handleDismissCelebration}
+      />
     </AnimatedScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 16 },
-  title: { fontSize: 24, fontWeight: '700', marginBottom: 16 },
-  label: { fontWeight: '600', marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, marginBottom: 8 },
-  captionInput: { minHeight: 70, textAlignVertical: 'top', marginBottom: 16 },
-  exerciseRow: { padding: 12, borderBottomWidth: 1, borderColor: '#eee' },
-  addCustom: { padding: 12, color: '#0066cc' },
-  selected: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  row: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  flex1: { flex: 1 },
-  unitToggle: { padding: 12, borderWidth: 1, borderColor: '#ccc', borderRadius: 8 },
-  button: { backgroundColor: '#111', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 16 },
-  buttonText: { color: '#fff', fontWeight: '600' },
-  link: { color: '#0066cc', marginTop: 8 },
-  setRow: { paddingVertical: 6 },
-  photoSection: { marginBottom: 16 },
-  photoButton: { flex: 1, backgroundColor: '#f5f5f5', padding: 14, borderRadius: 8, alignItems: 'center' },
-  photoButtonText: { color: '#111', fontWeight: '600' },
-  photoPreview: { width: '100%', height: 200, borderRadius: 8 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+  container: { flex: 1, backgroundColor: colors.bg },
+  scroll: { padding: spacing.lg },
+  title: { ...typeScale.display, color: colors.text, marginBottom: spacing.lg },
+  label: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
+  input: {
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    color: colors.text,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
-  chipSelected: { backgroundColor: '#111', borderColor: '#111' },
-  chipText: { color: '#333', fontSize: 13, fontWeight: '600' },
-  chipTextSelected: { color: '#fff' },
-  liftsSection: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderColor: '#eee' },
+  captionInput: { minHeight: 70, textAlignVertical: 'top', marginBottom: spacing.lg },
+  exerciseRow: { padding: spacing.md, borderBottomWidth: 1, borderColor: colors.border },
+  addCustom: { padding: spacing.md, color: colors.primary },
+  selected: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
+  row: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+  flex1: { flex: 1 },
+  unitToggle: { padding: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md },
+  button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.lg },
+  buttonText: { color: colors.white, fontWeight: '700' },
+  link: { color: colors.primary, marginTop: spacing.sm },
+  setRow: { paddingVertical: spacing.xs, color: colors.textMuted },
+  photoSection: { marginBottom: spacing.lg },
+  photoButton: { flex: 1, backgroundColor: colors.surface, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+  photoButtonText: { color: colors.text, fontWeight: '600' },
+  thumbRow: { gap: spacing.sm },
+  thumbWrap: { position: 'relative' },
+  thumb: { width: 90, height: 90, borderRadius: radius.md },
+  thumbRemove: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: colors.danger,
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addMoreTile: {
+    width: 90,
+    height: 90,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoCount: { ...typeScale.micro, color: colors.textFaint, marginTop: spacing.xs },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
+  chip: {
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
+  chipTextSelected: { color: colors.white },
+  liftsSection: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderColor: colors.border },
 });

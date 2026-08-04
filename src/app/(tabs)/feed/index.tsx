@@ -1,77 +1,142 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, RefreshControl, Pressable } from 'react-native';
+import { View, Text, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, router, Href } from 'expo-router';
 import { useAuth } from '../../../lib/auth';
-import { getFeed, FeedPost } from '../../../lib/feed';
+import { getFeed, FeedPost, FEED_PAGE_SIZE } from '../../../lib/feed';
+import { toggleLike } from '../../../lib/social';
+import { toggleBookmark } from '../../../lib/bookmarks';
+import { getUnreadCount } from '../../../lib/notifications';
 import { AnimatedScreen } from '../../../components/AnimatedScreen';
+import { FeedCardSkeleton } from '../../../components/Skeleton';
+import { FeedCard } from '../../../components/FeedCard';
+import { colors, spacing, type as typeScale } from '../../../lib/theme';
 
 export default function Feed() {
   const { session } = useAuth();
   const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [cursor, setCursor] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  const load = useCallback(async () => {
+  const loadFirstPage = useCallback(async () => {
     if (!session?.user) return;
-    setPosts(await getFeed(session.user.id));
+    const page = await getFeed(session.user.id);
+    setPosts(page.posts);
+    setCursor(page.nextCursor);
+    setInitialLoading(false);
   }, [session]);
 
   useFocusEffect(
     useCallback(() => {
-      load();
-    }, [load])
+      loadFirstPage();
+      if (session?.user) getUnreadCount(session.user.id).then(setUnreadCount);
+    }, [loadFirstPage, session])
   );
 
   async function handleRefresh() {
     setRefreshing(true);
-    await load();
+    await loadFirstPage();
     setRefreshing(false);
+  }
+
+  async function handleEndReached() {
+    if (!session?.user || !cursor || loadingMore) return;
+    setLoadingMore(true);
+    const page = await getFeed(session.user.id, cursor);
+    setPosts((prev) => [...prev, ...page.posts]);
+    setCursor(page.nextCursor);
+    setLoadingMore(false);
+  }
+
+  async function handleToggleLike(postId: string, currentlyLiked: boolean) {
+    if (!session?.user) return;
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? { ...p, likedByMe: !currentlyLiked, likeCount: currentlyLiked ? p.likeCount - 1 : p.likeCount + 1 }
+          : p
+      )
+    );
+    try {
+      await toggleLike(session.user.id, postId, currentlyLiked);
+    } catch {
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, likedByMe: currentlyLiked, likeCount: currentlyLiked ? p.likeCount + 1 : p.likeCount - 1 }
+            : p
+        )
+      );
+    }
+  }
+
+  async function handleToggleBookmark(postId: string, currentlyBookmarked: boolean) {
+    if (!session?.user) return;
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, bookmarkedByMe: !currentlyBookmarked } : p)));
+    try {
+      await toggleBookmark(session.user.id, postId, currentlyBookmarked);
+    } catch {
+      setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, bookmarkedByMe: currentlyBookmarked } : p)));
+    }
+  }
+
+  if (initialLoading) {
+    return (
+      <AnimatedScreen style={styles.container}>
+        {[0, 1, 2].map((i) => (
+          <FeedCardSkeleton key={i} />
+        ))}
+      </AnimatedScreen>
+    );
   }
 
   return (
     <AnimatedScreen style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.brand}>Pump Dump</Text>
+        <Pressable
+          onPress={() => router.push('/notifications')}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        >
+          <Ionicons name="notifications-outline" size={24} color={colors.text} />
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+            </View>
+          )}
+        </Pressable>
+      </View>
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />
+        }
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        initialNumToRender={FEED_PAGE_SIZE}
+        ListFooterComponent={loadingMore ? <ActivityIndicator style={styles.footerSpinner} color={colors.primary} /> : null}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text>No posts yet. Follow lifters in Search to fill your feed.</Text>
+            <Ionicons name="barbell-outline" size={40} color={colors.textFaint} />
+            <Text style={styles.emptyTitle}>Your feed is empty</Text>
+            <Text style={styles.emptyBody}>Follow lifters in Search to fill it up.</Text>
           </View>
         }
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.card}
-            onPress={() => router.push({ pathname: '/workout/[id]', params: { id: item.id } })}
-          >
-            <View style={styles.headerRow}>
-              <View style={styles.headerLeft}>
-                <Pressable
-                  onPress={() => router.push(`/user/${item.user_id}` as Href)}
-                  hitSlop={8}
-                >
-                  <Text style={styles.name}>{item.display_name}</Text>
-                </Pressable>
-                {item.title && (
-                  <View style={styles.groupPill}>
-                    <Text style={styles.groupPillText}>{item.title}</Text>
-                  </View>
-                )}
-              </View>
-              {item.hasPR && <Text style={styles.prBadge}>New PR!</Text>}
-            </View>
-            {item.photo_url && <Image source={{ uri: item.photo_url }} style={styles.photo} />}
-            {item.caption && <Text style={styles.caption}>{item.caption}</Text>}
-            {item.sets.slice(0, 3).map((s, i) => (
-              <Text key={i} style={styles.setLine}>
-                {s.exercise_name}: {s.weight}
-                {s.unit} x {s.reps}
-              </Text>
-            ))}
-            {item.sets.length > 3 && <Text style={styles.more}>+{item.sets.length - 3} more sets</Text>}
-            <Text style={styles.meta}>
-              {item.likeCount} likes · {item.commentCount} comments
-            </Text>
-          </Pressable>
+        renderItem={({ item, index }) => (
+          <FeedCard
+            post={item}
+            index={index}
+            onOpen={() => router.push({ pathname: '/workout/[id]', params: { id: item.id } })}
+            onOpenUser={() => router.push(`/user/${item.user_id}` as Href)}
+            onToggleLike={() => handleToggleLike(item.id, item.likedByMe)}
+            onToggleBookmark={() => handleToggleBookmark(item.id, item.bookmarkedByMe)}
+          />
         )}
       />
     </AnimatedScreen>
@@ -79,18 +144,31 @@ export default function Feed() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  empty: { padding: 32, alignItems: 'center' },
-  card: { padding: 16, borderBottomWidth: 1, borderColor: '#eee' },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { fontWeight: '700', fontSize: 16 },
-  groupPill: { backgroundColor: '#f0f0f0', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
-  groupPillText: { fontSize: 11, fontWeight: '600', color: '#555' },
-  prBadge: { backgroundColor: '#ffd700', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, fontSize: 12 },
-  photo: { width: '100%', height: 220, borderRadius: 8, marginTop: 8 },
-  caption: { color: '#111', marginTop: 8 },
-  setLine: { color: '#333', marginTop: 4 },
-  more: { color: '#888', marginTop: 4 },
-  meta: { color: '#888', marginTop: 8, fontSize: 12 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  brand: { ...typeScale.title, color: colors.text },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    backgroundColor: colors.accent,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: { color: colors.white, fontSize: 10, fontWeight: '700' },
+  empty: { padding: spacing.xxl, alignItems: 'center', gap: spacing.xs },
+  emptyTitle: { ...typeScale.subtitle, color: colors.text, marginTop: spacing.sm },
+  emptyBody: { ...typeScale.body, color: colors.textMuted },
+  footerSpinner: { marginVertical: spacing.xl },
 });

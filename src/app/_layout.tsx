@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import NetInfo from '@react-native-community/netinfo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { flushQueue } from '../lib/offlineQueue';
+import { colors } from '../lib/theme';
 
 function RootNavigation() {
   const { session, loading } = useAuth();
@@ -18,8 +20,13 @@ function RootNavigation() {
     const [first] = segments;
     if (first === undefined) return;
     const inAuthGroup = first === '(auth)';
+    // reset-password briefly has no session (before the recovery link's
+    // tokens are consumed) and then a session (once they are) -- gating on
+    // either state here would yank the user away mid-flow, so this route is
+    // exempt from both branches and manages its own navigation.
+    const isPasswordReset = first === 'reset-password';
 
-    if (!session && !inAuthGroup) {
+    if (!session && !inAuthGroup && !isPasswordReset) {
       router.replace('/(auth)/login');
     } else if (session && inAuthGroup) {
       router.replace('/(tabs)/feed');
@@ -39,12 +46,21 @@ function RootNavigation() {
   // coming back remounted the Tabs navigator fresh at its initial tab
   // (Feed), losing whichever tab (e.g. Profile) the user actually came from.
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="workout" />
-      <Stack.Screen name="user" />
-    </Stack>
+    <>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="workout" />
+        <Stack.Screen name="user" />
+        <Stack.Screen name="notifications" />
+        <Stack.Screen name="saved" />
+        <Stack.Screen name="follow-requests" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="blocked-accounts" />
+        <Stack.Screen name="reset-password" />
+      </Stack>
+    </>
   );
 }
 
