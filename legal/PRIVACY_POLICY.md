@@ -58,6 +58,10 @@ profiles about you.
 - **Apple and Google** — only if you choose to sign in using "Sign in with
   Apple" or Google Sign-In, in which case those providers handle the
   authentication handshake per their own privacy policies.
+- **Sentry** — our crash and error reporting provider. If the app crashes or
+  hits an unexpected error, technical details (device type, OS version,
+  stack trace) are sent to Sentry so we can fix it. This does not include
+  your workout content, and is used only for debugging, never advertising.
 - **Other users, as intended by the app's design** — your display name, bio,
   avatar, posts, and lift history are visible to your followers (or to
   everyone, if your account is public). Your followers/following lists are

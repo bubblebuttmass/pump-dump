@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { flushQueue } from '../lib/offlineQueue';
 import { colors } from '../lib/theme';
+import { Sentry } from '../lib/sentry';
 
 function RootNavigation() {
   const { session, loading } = useAuth();
@@ -64,7 +65,7 @@ function RootNavigation() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
@@ -73,3 +74,8 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+// Sentry.wrap adds an error boundary around the whole tree plus native crash
+// / navigation instrumentation -- a plain try/catch at this level wouldn't
+// catch render-phase errors the way an error boundary does.
+export default Sentry.wrap(RootLayout);
