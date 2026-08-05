@@ -39,6 +39,7 @@ export default function Signup() {
         keyboardType="email-address"
         value={email}
         onChangeText={setEmail}
+        accessibilityLabel="Email"
       />
       <TextInput
         style={styles.input}
@@ -47,6 +48,7 @@ export default function Signup() {
         secureTextEntry
         value={password}
         onChangeText={setPassword}
+        accessibilityLabel="Password, minimum 8 characters"
       />
       <PressableScale style={styles.button} onPress={handleSignup} disabled={submitting} scaleTo={0.97}>
         <Text style={styles.buttonText}>{submitting ? 'Creating...' : 'Sign up'}</Text>

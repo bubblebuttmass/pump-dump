@@ -231,6 +231,7 @@ export default function LogWorkout() {
           onChangeText={setCaption}
           multiline
           maxLength={280}
+          accessibilityLabel="Caption"
         />
 
         <Text style={styles.label}>Muscle group</Text>
@@ -265,6 +266,7 @@ export default function LogWorkout() {
                   placeholder="Search exercises..."
                   value={searchQuery}
                   onChangeText={handleSearch}
+                  accessibilityLabel="Search exercises"
                 />
                 {results.map((item) => (
                   <Pressable key={item.id} style={styles.exerciseRow} onPress={() => setSelectedExercise(item)}>
@@ -287,6 +289,7 @@ export default function LogWorkout() {
                     keyboardType="numeric"
                     value={weight}
                     onChangeText={setWeight}
+                    accessibilityLabel="Weight"
                   />
                   <TextInput
                     style={[styles.input, styles.flex1]}
@@ -294,6 +297,7 @@ export default function LogWorkout() {
                     keyboardType="numeric"
                     value={reps}
                     onChangeText={setReps}
+                    accessibilityLabel="Reps"
                   />
                   <Pressable onPress={() => setUnit(unit === 'lb' ? 'kg' : 'lb')} style={styles.unitToggle}>
                     <Text>{unit}</Text>

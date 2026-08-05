@@ -99,6 +99,11 @@ export default function EditProfile() {
         value={displayName}
         onChangeText={setDisplayName}
         editable={usernameCooldownDays === 0}
+        accessibilityLabel={
+          usernameCooldownDays > 0
+            ? `Display name, locked for ${usernameCooldownDays} day${usernameCooldownDays === 1 ? '' : 's'}`
+            : 'Display name'
+        }
       />
       {usernameCooldownDays > 0 && (
         <Text style={styles.usernameCooldownHint}>
@@ -114,6 +119,7 @@ export default function EditProfile() {
         placeholderTextColor={colors.textFaint}
         multiline
         maxLength={200}
+        accessibilityLabel="Bio"
       />
       <Text style={styles.label}>Gym</Text>
       <TextInput
@@ -122,6 +128,7 @@ export default function EditProfile() {
         onChangeText={setGym}
         placeholder="Where do you train?"
         placeholderTextColor={colors.textFaint}
+        accessibilityLabel="Gym"
       />
       <Text style={styles.label}>Favorite lift</Text>
       <TextInput
@@ -130,6 +137,7 @@ export default function EditProfile() {
         onChangeText={setFavoriteLift}
         placeholder="Squat, bench, deadlift..."
         placeholderTextColor={colors.textFaint}
+        accessibilityLabel="Favorite lift"
       />
       <Text style={styles.label}>Years lifting</Text>
       <TextInput
@@ -139,6 +147,7 @@ export default function EditProfile() {
         placeholder="e.g. 3"
         placeholderTextColor={colors.textFaint}
         keyboardType="number-pad"
+        accessibilityLabel="Years lifting"
       />
 
       {TRAIT_CATEGORIES.map((category) => (

@@ -95,6 +95,7 @@ export default function ResetPassword() {
         secureTextEntry
         value={password}
         onChangeText={setPassword}
+        accessibilityLabel="New password"
       />
       <PressableScale style={styles.button} onPress={handleSave} disabled={saving} scaleTo={0.97}>
         <Text style={styles.buttonText}>{saving ? 'Saving...' : 'Save password'}</Text>

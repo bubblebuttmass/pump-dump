@@ -50,6 +50,7 @@ export default function ForgotPassword() {
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
+            accessibilityLabel="Email"
           />
           <PressableScale style={styles.button} onPress={handleSend} disabled={submitting} scaleTo={0.97}>
             <Text style={styles.buttonText}>{submitting ? 'Sending...' : 'Send reset link'}</Text>

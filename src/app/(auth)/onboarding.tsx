@@ -74,6 +74,7 @@ export default function Onboarding() {
         placeholderTextColor={colors.textFaint}
         value={displayName}
         onChangeText={setDisplayName}
+        accessibilityLabel="Display name"
       />
       <PressableScale style={styles.button} onPress={handleSave} disabled={submitting} scaleTo={0.97}>
         <Text style={styles.buttonText}>{submitting ? 'Saving...' : 'Continue'}</Text>

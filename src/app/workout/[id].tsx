@@ -260,6 +260,7 @@ export default function WorkoutDetailScreen() {
                 value={commentText}
                 onChangeText={setCommentText}
                 onFocus={handleCommentFocus}
+                accessibilityLabel="Add a comment"
               />
               <Pressable onPress={handleAddComment} hitSlop={8}>
                 <Text style={styles.postButton}>Post</Text>

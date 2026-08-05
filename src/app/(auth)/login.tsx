@@ -90,6 +90,7 @@ export default function Login() {
         keyboardType="email-address"
         value={email}
         onChangeText={setEmail}
+        accessibilityLabel="Email"
       />
       <TextInput
         style={styles.input}
@@ -98,6 +99,7 @@ export default function Login() {
         secureTextEntry
         value={password}
         onChangeText={setPassword}
+        accessibilityLabel="Password"
       />
       <PressableScale style={styles.button} onPress={handleLogin} disabled={submitting} scaleTo={0.97}>
         <Text style={styles.buttonText}>{submitting ? 'Logging in...' : 'Log in'}</Text>

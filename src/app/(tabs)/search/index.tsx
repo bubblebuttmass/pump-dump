@@ -106,6 +106,7 @@ export default function Search() {
           onChangeText={handleChangeText}
           returnKeyType="search"
           onSubmitEditing={handleSubmit}
+          accessibilityLabel="Search lifters or exercises"
         />
       </View>
 
