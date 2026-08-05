@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -14,6 +14,7 @@ import { showAlert } from '../../../lib/alert';
 import { uploadWorkoutPhotos } from '../../../lib/storage';
 import { getBadgeStats } from '../../../lib/profile';
 import { computeBadges, Badge } from '../../../lib/badges';
+import { getCurrentLocationOnce, getNearbyGyms, createGym, NearbyGym } from '../../../lib/gyms';
 import { AnimatedScreen } from '../../../components/AnimatedScreen';
 import { PressableScale } from '../../../components/PressableScale';
 import { CelebrationModal } from '../../../components/CelebrationModal';
@@ -41,6 +42,14 @@ export default function LogWorkout() {
   const [draftSets, setDraftSets] = useState<DraftSet[]>([]);
   const [posting, setPosting] = useState(false);
   const [celebration, setCelebration] = useState<{ title: string; subtitle?: string; badges: Badge[] } | null>(null);
+
+  const [showGymPicker, setShowGymPicker] = useState(false);
+  const [gymLocating, setGymLocating] = useState(false);
+  const [gymLocationDenied, setGymLocationDenied] = useState(false);
+  const [pendingCoords, setPendingCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearbyGyms, setNearbyGyms] = useState<NearbyGym[]>([]);
+  const [selectedGym, setSelectedGym] = useState<{ id: string; name: string } | null>(null);
+  const [newGymName, setNewGymName] = useState('');
 
   async function handleTakePhoto() {
     if (photoUris.length >= MAX_PHOTOS) return;
@@ -102,6 +111,54 @@ export default function LogWorkout() {
     setReps('');
   }
 
+  // Location is requested here, lazily, only when someone actually opens
+  // the gym picker -- never on screen load. One-shot fetch, not a
+  // subscription, so there's nothing to clean up once it resolves.
+  async function handleToggleGymPicker() {
+    const opening = !showGymPicker;
+    setShowGymPicker(opening);
+    if (!opening || pendingCoords || gymLocationDenied) return;
+
+    setGymLocating(true);
+    const result = await getCurrentLocationOnce();
+    setGymLocating(false);
+    if (result.status === 'denied') {
+      setGymLocationDenied(true);
+      return;
+    }
+    if (result.status === 'error') {
+      showAlert('Could not get location', result.message);
+      return;
+    }
+    setPendingCoords(result.coords);
+    try {
+      setNearbyGyms(await getNearbyGyms(result.coords.lat, result.coords.lng));
+    } catch (e: any) {
+      showAlert('Could not load nearby gyms', e.message ?? String(e));
+    }
+  }
+
+  function handleSelectGym(g: NearbyGym) {
+    setSelectedGym({ id: g.id, name: g.name });
+    setShowGymPicker(false);
+  }
+
+  function handleClearGym() {
+    setSelectedGym(null);
+  }
+
+  async function handleCreateGym() {
+    if (!session?.user || !pendingCoords || newGymName.trim().length === 0) return;
+    try {
+      const created = await createGym(newGymName.trim(), pendingCoords.lat, pendingCoords.lng, session.user.id);
+      setSelectedGym({ id: created.id, name: created.name });
+      setNewGymName('');
+      setShowGymPicker(false);
+    } catch (e: any) {
+      showAlert('Could not add gym', e.message ?? String(e));
+    }
+  }
+
   function resetForm() {
     setPhotoUris([]);
     setCaption('');
@@ -109,6 +166,13 @@ export default function LogWorkout() {
     setShowLifts(false);
     setDraftSets([]);
     setSelectedExercise(null);
+    setShowGymPicker(false);
+    setGymLocating(false);
+    setGymLocationDenied(false);
+    setPendingCoords(null);
+    setNearbyGyms([]);
+    setSelectedGym(null);
+    setNewGymName('');
   }
 
   async function handlePost() {
@@ -145,6 +209,7 @@ export default function LogWorkout() {
         title: muscleGroup ?? undefined,
         caption: caption.trim() || undefined,
         photoUrls,
+        gymId: selectedGym?.id,
         sets,
       });
       resetForm();
@@ -249,6 +314,55 @@ export default function LogWorkout() {
             </Pressable>
           ))}
         </View>
+
+        {selectedGym ? (
+          <View style={styles.gymPill}>
+            <Ionicons name="location" size={14} color={colors.primary} />
+            <Text style={styles.gymPillText}>{selectedGym.name}</Text>
+            <Pressable onPress={handleClearGym} hitSlop={8} accessibilityRole="button" accessibilityLabel="Remove gym tag">
+              <Ionicons name="close" size={14} color={colors.textFaint} />
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable onPress={handleToggleGymPicker}>
+            <Text style={styles.link}>{showGymPicker ? 'Hide gym search' : '+ Tag a gym (optional)'}</Text>
+          </Pressable>
+        )}
+
+        {showGymPicker && !selectedGym && (
+          <View style={styles.gymSection}>
+            {gymLocating && <ActivityIndicator color={colors.primary} style={styles.gymSpinner} />}
+            {gymLocationDenied && (
+              <Text style={styles.gymHint}>
+                Location access is off, so nearby gyms can't be found. Enable it in Settings to tag a gym.
+              </Text>
+            )}
+            {!gymLocating && nearbyGyms.length > 0 && (
+              <View style={styles.chipRow}>
+                {nearbyGyms.map((g) => (
+                  <Pressable key={g.id} style={styles.chip} onPress={() => handleSelectGym(g)} accessibilityRole="button" accessibilityLabel={g.name}>
+                    <Text style={styles.chipText}>{g.name}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+            {!gymLocating && pendingCoords && (
+              <View style={styles.row}>
+                <TextInput
+                  style={[styles.input, styles.flex1]}
+                  placeholder="Don't see it? Add this gym"
+                  placeholderTextColor={colors.textFaint}
+                  value={newGymName}
+                  onChangeText={setNewGymName}
+                  accessibilityLabel="New gym name"
+                />
+                <Pressable style={styles.button} onPress={handleCreateGym} disabled={newGymName.trim().length === 0}>
+                  <Text style={styles.buttonText}>Add</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        )}
 
         <Pressable onPress={() => setShowLifts((v) => !v)}>
           <Text style={styles.link}>
@@ -403,4 +517,19 @@ const styles = StyleSheet.create({
   chipText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
   chipTextSelected: { color: colors.white },
   liftsSection: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderColor: colors.border },
+  gymPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    backgroundColor: colors.primaryMuted,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    marginBottom: spacing.sm,
+  },
+  gymPillText: { ...typeScale.caption, color: colors.primary, fontWeight: '600' },
+  gymSection: { marginBottom: spacing.md },
+  gymSpinner: { marginVertical: spacing.sm },
+  gymHint: { ...typeScale.caption, color: colors.textFaint, marginBottom: spacing.sm },
 });

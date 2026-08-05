@@ -33,9 +33,17 @@ private to you; the other person is not notified).
 **Safety reports.** If you report a post or account, we store the report and
 the reason you gave, so it can be reviewed.
 
-**What we do not collect.** We do not collect your location. We do not use
-advertising SDKs or third-party analytics/tracking libraries. We do not sell
-your data to anyone, for any reason.
+**Location — only if you tag a gym.** Tagging a gym on a post is optional.
+If you use it, we ask for your device's location once, at that moment, to
+suggest nearby gyms or let you add a new one — we don't track your location
+in the background, and we don't request it until you tap "Tag a gym." The
+gym's coordinates (a fixed, public venue location, not your personal
+location) are stored so the gym can be suggested to other lifters nearby.
+If you never use this feature, we never request or receive your location.
+
+**What we do not collect.** We do not use advertising SDKs or third-party
+analytics/tracking libraries. We do not sell your data to anyone, for any
+reason.
 
 ## How we use your information
 

@@ -107,6 +107,13 @@ export function FeedCard({ post, index = STAGGER_CAP, onOpen, onOpenUser, onTogg
         )}
       </View>
 
+      {post.gymName && (
+        <View style={styles.gymRow}>
+          <Ionicons name="location" size={11} color={colors.textFaint} />
+          <Text style={styles.gymText}>{post.gymName}</Text>
+        </View>
+      )}
+
       {post.photos.length === 1 ? (
         <Pressable onPress={handlePhotoPress}>
           <PhotoCarousel photos={post.photos} height={260} style={styles.photo} />
@@ -223,6 +230,8 @@ const styles = StyleSheet.create({
   },
   prBadgeText: { ...typeScale.micro, color: colors.bg },
   photo: { width: '100%', height: 260, borderRadius: radius.md, marginTop: spacing.md },
+  gymRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  gymText: { ...typeScale.micro, color: colors.textFaint },
   burst: {
     position: 'absolute',
     top: 0,

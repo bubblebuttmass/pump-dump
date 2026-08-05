@@ -64,6 +64,7 @@ export interface WorkoutDetail {
   display_name: string;
   title: string | null;
   caption: string | null;
+  gymName: string | null;
   photos: string[];
   created_at: string;
   sets: WorkoutDetailSet[];
@@ -77,6 +78,7 @@ export async function getWorkoutDetail(workoutId: string, viewerId: string): Pro
     .from('workouts')
     .select(
       `id, user_id, created_at, photo_url, photo_urls, title, caption, users:user_id ( display_name ),
+       gyms:gym_id ( name ),
        workout_sets ( id, weight, reps, unit, exercises ( name ), personal_records ( workout_set_id ) ),
        likes ( user_id ),
        bookmarks ( user_id )`
@@ -96,6 +98,7 @@ export async function getWorkoutDetail(workoutId: string, viewerId: string): Pro
     display_name: w.users?.display_name ?? 'Unknown',
     title: w.title ?? null,
     caption: w.caption ?? null,
+    gymName: w.gyms?.name ?? null,
     photos: w.photo_urls?.length > 0 ? w.photo_urls : w.photo_url ? [w.photo_url] : [],
     created_at: w.created_at,
     sets: (w.workout_sets ?? []).map((s: any) => ({

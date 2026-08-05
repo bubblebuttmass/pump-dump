@@ -53,7 +53,13 @@
         }
       ],
       "expo-apple-authentication",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Pump Dump uses your location, only while the app is open, to suggest nearby gyms when you tag one on a post."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

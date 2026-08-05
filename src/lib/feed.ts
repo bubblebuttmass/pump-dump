@@ -15,6 +15,7 @@ export interface FeedPost {
   avatar_url: string | null;
   title: string | null;
   caption: string | null;
+  gymName: string | null;
   photos: string[];
   created_at: string;
   sets: FeedSet[];
@@ -38,6 +39,7 @@ export const FEED_PAGE_SIZE = 15;
 // instead of queried directly).
 export const WORKOUT_SELECT = `id, user_id, title, caption, photo_url, photo_urls, created_at,
    users:user_id ( display_name, avatar_url ),
+   gyms:gym_id ( name ),
    workout_sets ( weight, reps, unit, exercises ( name ), id, personal_records ( workout_set_id ) ),
    likes ( user_id ),
    bookmarks ( user_id ),
@@ -58,6 +60,7 @@ export function mapWorkoutRow(w: any, viewerId: string): FeedPost {
     avatar_url: w.users?.avatar_url ?? null,
     title: w.title,
     caption: w.caption ?? null,
+    gymName: w.gyms?.name ?? null,
     photos: w.photo_urls?.length > 0 ? w.photo_urls : w.photo_url ? [w.photo_url] : [],
     created_at: w.created_at,
     sets: (w.workout_sets ?? []).map((s: any) => ({

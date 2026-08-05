@@ -171,6 +171,12 @@ export default function WorkoutDetailScreen() {
               >
                 <Text style={styles.name}>{detail.display_name}</Text>
                 <Text style={styles.time}>{formatRelativeTime(detail.created_at)}</Text>
+                {detail.gymName && (
+                  <View style={styles.gymRow}>
+                    <Ionicons name="location" size={11} color={colors.textFaint} />
+                    <Text style={styles.gymText}>{detail.gymName}</Text>
+                  </View>
+                )}
               </Pressable>
               <View style={styles.headerActions}>
                 <Pressable
@@ -283,6 +289,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.md },
   name: { ...typeScale.title, color: colors.text },
   time: { ...typeScale.caption, color: colors.textFaint, marginTop: 2 },
+  gymRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  gymText: { ...typeScale.micro, color: colors.textFaint },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   likeButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   likeCount: { ...typeScale.body, color: colors.textMuted },
