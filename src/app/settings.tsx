@@ -37,7 +37,19 @@ export default function Settings() {
     }, [session])
   );
 
-  async function handleTogglePush(value: boolean) {
+  // Both handlers defer their first state update off the native Switch's
+  // own onChange call stack with a 0ms setTimeout. Updating React state
+  // synchronously inside that handler can race with React Native's own
+  // event dispatch on iOS (Fabric dispatching onChange to a view that's
+  // mid-re-render) -- a known crash class (EXC_BAD_ACCESS in
+  // facebook::react::EventEmitter::dispatchEvent), confirmed via a real
+  // Sentry crash report on this exact toggle. Letting the native event
+  // fully settle before React touches the view again avoids it.
+  function handleTogglePush(value: boolean) {
+    setTimeout(() => runTogglePush(value), 0);
+  }
+
+  async function runTogglePush(value: boolean) {
     if (!session?.user) return;
     setPushEnabled(value);
     try {
@@ -56,7 +68,11 @@ export default function Settings() {
     }
   }
 
-  async function handleTogglePrivate(value: boolean) {
+  function handleTogglePrivate(value: boolean) {
+    setTimeout(() => runTogglePrivate(value), 0);
+  }
+
+  async function runTogglePrivate(value: boolean) {
     if (!session?.user) return;
     const previous = isPrivate;
     setIsPrivate(value);
