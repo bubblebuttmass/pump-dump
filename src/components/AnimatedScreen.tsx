@@ -1,30 +1,15 @@
-import React, { useEffect } from 'react';
 import { StyleProp, ViewStyle } from 'react-native';
 import { SafeAreaView, Edge } from 'react-native-safe-area-context';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing } from 'react-native-reanimated';
-import { useReducedMotion } from '../lib/useReducedMotion';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
-// Fades in once, on first mount, not on every focus. React Navigation keeps
-// tab/stack screens mounted after their first visit, so re-fading on every
-// focus meant every single tab switch replayed a 220ms dim-then-brighten
-// pulse -- with bottom-tabs having no transition of its own, that pulse was
-// the only thing visibly happening on tap, which read as flicker. A fresh
-// mount (first visit, or a new dynamic-route instance like a different
-// workout id) still gets the entrance fade; revisiting an already-mounted
-// screen now shows instantly, like every other polished app.
+// Previously faded in once on mount (220ms opacity 0->1). That fade -- even
+// though it only ever ran once per screen, never on refocus -- still read as
+// a "flicker" on every screen's first-ever appearance (Log/Post included,
+// which has no async loading gate at all, ruling out a data-loading cause).
+// Screens now appear instantly, no entrance transition, which is the
+// simplest way to guarantee nothing can look like a flash on first mount.
 function useFadeOnMount() {
-  const reducedMotion = useReducedMotion();
-  const opacity = useSharedValue(reducedMotion ? 1 : 0);
-
-  useEffect(() => {
-    if (reducedMotion) {
-      opacity.value = 1;
-      return;
-    }
-    opacity.value = withTiming(1, { duration: 220, easing: Easing.out(Easing.quad) });
-  }, [opacity, reducedMotion]);
-
-  return useAnimatedStyle(() => ({ opacity: opacity.value }));
+  return useAnimatedStyle(() => ({ opacity: 1 }));
 }
 
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
