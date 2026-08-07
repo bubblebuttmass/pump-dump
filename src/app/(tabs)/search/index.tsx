@@ -149,7 +149,7 @@ export default function Search() {
                   <View key={u.id} style={styles.suggestedCard}>
                     <Pressable onPress={() => router.push(`/user/${u.id}` as Href)} style={styles.suggestedCardTap}>
                       {u.avatar_url ? (
-                        <Image source={{ uri: u.avatar_url }} style={styles.suggestedAvatar} contentFit="cover" cachePolicy="memory-disk" />
+                        <Image source={{ uri: u.avatar_url }} style={styles.suggestedAvatar} contentFit="cover" cachePolicy="memory-disk" transition={200} />
                       ) : (
                         <View style={[styles.suggestedAvatar, styles.avatarPlaceholder]} />
                       )}

@@ -88,7 +88,7 @@ export default function EditProfile() {
         accessibilityLabel="Change profile photo"
       >
         {newAvatarUri || avatarUrl ? (
-          <Image source={{ uri: newAvatarUri ?? avatarUrl! }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" />
+          <Image source={{ uri: newAvatarUri ?? avatarUrl! }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" transition={200} />
         ) : (
           <Text style={styles.choosePhotoText}>Choose photo</Text>
         )}

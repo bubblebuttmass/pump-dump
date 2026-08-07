@@ -83,7 +83,7 @@ export default function Notifications() {
           renderItem={({ item }) => (
             <Pressable style={[styles.row, !item.read && styles.rowUnread]} onPress={() => handlePress(item)}>
               {item.actorAvatar ? (
-                <Image source={{ uri: item.actorAvatar }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" />
+                <Image source={{ uri: item.actorAvatar }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" transition={200} />
               ) : (
                 <View style={[styles.avatar, styles.avatarPlaceholder]} />
               )}

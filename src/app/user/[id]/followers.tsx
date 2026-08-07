@@ -75,7 +75,7 @@ export default function Followers() {
               onPress={() => router.push(`/user/${item.id}` as Href)}
             >
               {item.avatar_url ? (
-                <Image source={{ uri: item.avatar_url }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" />
+                <Image source={{ uri: item.avatar_url }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" transition={200} />
               ) : (
                 <View style={[styles.avatar, styles.avatarPlaceholder]} />
               )}

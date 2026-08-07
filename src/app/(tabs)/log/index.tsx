@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -68,15 +68,6 @@ export default function LogWorkout() {
   const [nearbyGyms, setNearbyGyms] = useState<NearbyGym[]>([]);
   const [selectedGym, setSelectedGym] = useState<{ id: string; name: string } | null>(null);
   const [newGymName, setNewGymName] = useState('');
-  const scrollRef = useRef<ScrollView>(null);
-
-  // Same fix as the comment box on Workout Detail: the keyboard (especially
-  // the emoji keyboard, which is taller) can still cover this field since it
-  // sits mid-form, not at the bottom. Scrolling to the end on focus clears
-  // it regardless of which keyboard opens, rather than tuning a fixed offset.
-  function handleGymInputFocus() {
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
-  }
 
   async function handleTakePhoto() {
     if (photoUris.length >= MAX_PHOTOS) return;
@@ -275,7 +266,12 @@ export default function LogWorkout() {
 
   return (
     <AnimatedScreen style={styles.container}>
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Share your pump</Text>
 
         <View style={styles.photoSection}>
@@ -381,7 +377,6 @@ export default function LogWorkout() {
                   placeholderTextColor={colors.textFaint}
                   value={newGymName}
                   onChangeText={setNewGymName}
-                  onFocus={handleGymInputFocus}
                   accessibilityLabel="New gym name"
                 />
                 <Pressable style={styles.button} onPress={handleCreateGym} disabled={newGymName.trim().length === 0}>
@@ -467,6 +462,7 @@ export default function LogWorkout() {
           <Text style={styles.buttonText}>{posting ? 'Posting...' : 'Share Pump'}</Text>
         </PressableScale>
       </ScrollView>
+      </KeyboardAvoidingView>
       <CelebrationModal
         visible={celebration !== null}
         title={celebration?.title ?? ''}
