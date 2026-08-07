@@ -407,7 +407,7 @@ export default function LogWorkout() {
                 />
                 {results.map((item) => (
                   <Pressable key={item.id} style={styles.exerciseRow} onPress={() => setSelectedExercise(item)}>
-                    <Text>{item.name}</Text>
+                    <Text style={styles.exerciseRowText}>{item.name}</Text>
                   </Pressable>
                 ))}
                 {results.length === 0 && searchQuery.trim().length > 0 && (
@@ -437,7 +437,7 @@ export default function LogWorkout() {
                     accessibilityLabel="Reps"
                   />
                   <Pressable onPress={() => setUnit(unit === 'lb' ? 'kg' : 'lb')} style={styles.unitToggle}>
-                    <Text>{unit}</Text>
+                    <Text style={styles.unitToggleText}>{unit}</Text>
                   </Pressable>
                 </View>
                 <Pressable style={styles.button} onPress={handleAddSet}>
@@ -490,11 +490,13 @@ const styles = StyleSheet.create({
   },
   captionInput: { minHeight: 70, textAlignVertical: 'top', marginBottom: spacing.lg },
   exerciseRow: { padding: spacing.md, borderBottomWidth: 1, borderColor: colors.border },
+  exerciseRowText: { ...typeScale.body, color: colors.text },
   addCustom: { padding: spacing.md, color: colors.primary },
   selected: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
   row: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
   flex1: { flex: 1 },
   unitToggle: { padding: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md },
+  unitToggleText: { ...typeScale.body, color: colors.text, fontWeight: '600' },
   button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.lg },
   buttonText: { color: colors.white, fontWeight: '700' },
   link: { color: colors.primary, marginTop: spacing.sm },
