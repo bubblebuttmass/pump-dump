@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,18 +18,29 @@ export default function Profile() {
   const [postsCursor, setPostsCursor] = useState<string | null>(null);
   const [loadingMorePosts, setLoadingMorePosts] = useState(false);
   const [weeklyRecap, setWeeklyRecap] = useState<WeeklyRecap | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadProfile = useCallback(async () => {
+    if (!session?.user) return;
+    const [loaded] = await Promise.all([
+      getProfile(session.user.id, session.user.id),
+      getWeeklyRecap(session.user.id).then(setWeeklyRecap),
+    ]);
+    setProfile(loaded);
+    setPostsCursor(loaded.recentWorkoutsNextCursor);
+  }, [session]);
 
   useFocusEffect(
     useCallback(() => {
-      if (session?.user) {
-        getProfile(session.user.id, session.user.id).then((loaded) => {
-          setProfile(loaded);
-          setPostsCursor(loaded.recentWorkoutsNextCursor);
-        });
-        getWeeklyRecap(session.user.id).then(setWeeklyRecap);
-      }
-    }, [session])
+      loadProfile();
+    }, [loadProfile])
   );
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await loadProfile();
+    setRefreshing(false);
+  }
 
   const completionChecks = profile
     ? [
@@ -68,6 +79,7 @@ export default function Profile() {
         keyExtractor={(item) => item.id}
         onEndReached={handleLoadMorePosts}
         onEndReachedThreshold={0.5}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
         contentContainerStyle={styles.listContent}
         ListFooterComponent={loadingMorePosts ? <ActivityIndicator style={styles.footerSpinner} color={colors.primary} /> : null}
         ListEmptyComponent={<Text style={styles.emptyInline}>No posts yet.</Text>}

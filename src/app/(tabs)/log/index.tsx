@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +24,25 @@ interface DraftSet extends NewSetInput {
   exerciseName: string;
 }
 
-const MUSCLE_GROUPS = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core', 'Full Body', 'Cardio', 'Rest Day'];
+const MUSCLE_GROUPS = [
+  'Chest',
+  'Back',
+  'Shoulders',
+  'Arms',
+  'Legs',
+  'Core',
+  'Full Body',
+  'Cardio',
+  'Rest Day',
+  'Upper',
+  'Lower',
+  'Chest/Back',
+  'Arms/Shoulders',
+  'Push',
+  'Pull',
+  'Biceps',
+  'Triceps',
+];
 const MAX_PHOTOS = 3;
 
 export default function LogWorkout() {
@@ -50,6 +68,15 @@ export default function LogWorkout() {
   const [nearbyGyms, setNearbyGyms] = useState<NearbyGym[]>([]);
   const [selectedGym, setSelectedGym] = useState<{ id: string; name: string } | null>(null);
   const [newGymName, setNewGymName] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Same fix as the comment box on Workout Detail: the keyboard (especially
+  // the emoji keyboard, which is taller) can still cover this field since it
+  // sits mid-form, not at the bottom. Scrolling to the end on focus clears
+  // it regardless of which keyboard opens, rather than tuning a fixed offset.
+  function handleGymInputFocus() {
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 50);
+  }
 
   async function handleTakePhoto() {
     if (photoUris.length >= MAX_PHOTOS) return;
@@ -248,7 +275,7 @@ export default function LogWorkout() {
 
   return (
     <AnimatedScreen style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Share your pump</Text>
 
         <View style={styles.photoSection}>
@@ -354,6 +381,7 @@ export default function LogWorkout() {
                   placeholderTextColor={colors.textFaint}
                   value={newGymName}
                   onChangeText={setNewGymName}
+                  onFocus={handleGymInputFocus}
                   accessibilityLabel="New gym name"
                 />
                 <Pressable style={styles.button} onPress={handleCreateGym} disabled={newGymName.trim().length === 0}>
