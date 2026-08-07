@@ -59,6 +59,13 @@
         {
           "locationWhenInUsePermission": "Pump Dump uses your location, only while the app is open, to suggest nearby gyms when you tag one on a post."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#e63946"
+        }
       ]
     ],
     "experiments": {

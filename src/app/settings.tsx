@@ -8,6 +8,7 @@ import { useAuth } from '../lib/auth';
 import { getProfile, updatePrivacy } from '../lib/profile';
 import { getFollowRequests } from '../lib/social-graph';
 import { deleteAccount } from '../lib/account';
+import { registerForPushNotifications, unregisterPushNotifications, hasPushToken } from '../lib/pushNotifications';
 import { showAlert } from '../lib/alert';
 import { AnimatedScreen } from '../components/AnimatedScreen';
 import { colors, radius, spacing, type as typeScale } from '../lib/theme';
@@ -18,6 +19,8 @@ export default function Settings() {
   const [loaded, setLoaded] = useState(false);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoaded, setPushLoaded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -27,8 +30,31 @@ export default function Settings() {
         setLoaded(true);
       });
       getFollowRequests(session.user.id).then((reqs) => setPendingRequestCount(reqs.length));
+      hasPushToken(session.user.id).then((has) => {
+        setPushEnabled(has);
+        setPushLoaded(true);
+      });
     }, [session])
   );
+
+  async function handleTogglePush(value: boolean) {
+    if (!session?.user) return;
+    setPushEnabled(value);
+    try {
+      if (value) {
+        const granted = await registerForPushNotifications(session.user.id);
+        if (!granted) {
+          setPushEnabled(false);
+          showAlert('Notifications off', 'Enable notifications for Pump Dump in your device Settings to turn this on.');
+        }
+      } else {
+        await unregisterPushNotifications(session.user.id);
+      }
+    } catch (e: any) {
+      setPushEnabled(!value);
+      showAlert('Could not update notifications', e.message ?? String(e));
+    }
+  }
 
   async function handleTogglePrivate(value: boolean) {
     if (!session?.user) return;
@@ -109,6 +135,23 @@ export default function Settings() {
             <Ionicons name="chevron-forward" size={18} color={colors.textFaint} />
           </View>
         </Pressable>
+      </View>
+
+      <Text style={styles.sectionTitle}>Notifications</Text>
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={styles.rowTextWrap}>
+            <Text style={styles.rowLabel}>Push Notifications</Text>
+            <Text style={styles.rowHint}>Get notified about likes, comments, and new followers.</Text>
+          </View>
+          <Switch
+            value={pushEnabled}
+            onValueChange={handleTogglePush}
+            disabled={!pushLoaded}
+            trackColor={{ true: colors.primary, false: colors.surfaceRaised }}
+            thumbColor={colors.white}
+          />
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>Privacy & Safety</Text>

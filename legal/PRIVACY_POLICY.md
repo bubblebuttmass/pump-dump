@@ -41,6 +41,11 @@ gym's coordinates (a fixed, public venue location, not your personal
 location) are stored so the gym can be suggested to other lifters nearby.
 If you never use this feature, we never request or receive your location.
 
+**Push notification token — only if you turn on notifications.** Push
+notifications are off by default. If you turn them on in Settings, we store
+a device push token so we can notify you about likes, comments, and new
+followers. Turning notifications off removes this token.
+
 **What we do not collect.** We do not use advertising SDKs or third-party
 analytics/tracking libraries. We do not sell your data to anyone, for any
 reason.
@@ -70,6 +75,10 @@ profiles about you.
   hits an unexpected error, technical details (device type, OS version,
   stack trace) are sent to Sentry so we can fix it. This does not include
   your workout content, and is used only for debugging, never advertising.
+- **Expo's push notification service** — only if you turn on push
+  notifications. Your device's push token is sent through Expo's relay to
+  deliver notifications to your device; Expo does not receive your workout
+  content, only the notification text (e.g. "Someone liked your pump").
 - **Other users, as intended by the app's design** — your display name, bio,
   avatar, posts, and lift history are visible to your followers (or to
   everyone, if your account is public). Your followers/following lists are
