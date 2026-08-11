@@ -2,9 +2,11 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 // Only Postgres calls this (via the trigger_push_on_notification trigger),
 // never a client directly -- verify_jwt is off for this function, and this
-// shared secret is the actual gate instead. Must match the value baked
-// into that trigger's http_post call.
-const WEBHOOK_SECRET = '21d7bf69a7540252588692650fffb457413327eff9896d2a9968825b2ce8abd8';
+// shared secret is the actual gate instead. Lives only as a project-level
+// Edge Function secret (`supabase secrets set PUSH_WEBHOOK_SECRET=...`) and
+// in Vault as `push_webhook_secret`, which the trigger reads at call time --
+// never hardcoded here, so it's never something a git checkout exposes.
+const WEBHOOK_SECRET = Deno.env.get('PUSH_WEBHOOK_SECRET');
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 const MESSAGES: Record<string, (actorName: string) => string> = {
@@ -19,6 +21,12 @@ function log(event: string, fields: Record<string, unknown> = {}) {
 
 Deno.serve(async (req: Request) => {
   try {
+    // Fail closed: an unset secret must never fall back to "any header
+    // matches undefined" -- that would open this endpoint to anyone.
+    if (!WEBHOOK_SECRET) {
+      log('misconfigured_no_secret');
+      return new Response('Server misconfigured', { status: 500 });
+    }
     if (req.headers.get('x-webhook-secret') !== WEBHOOK_SECRET) {
       log('rejected_bad_secret');
       return new Response('Unauthorized', { status: 401 });

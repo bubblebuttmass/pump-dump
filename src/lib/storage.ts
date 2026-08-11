@@ -1,3 +1,4 @@
+import * as Crypto from 'expo-crypto';
 import { supabase } from './supabase';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
@@ -16,7 +17,14 @@ async function uploadToBucket(bucket: string, userId: string, localUri: string, 
 
   const response = await fetch(localUri);
   const blob = await response.blob();
-  const path = `${userId}/${prefix}-${Date.now()}.jpg`;
+  // These buckets are public (public URLs bypass RLS entirely), so the
+  // filename is the only thing standing between "you have the link" and
+  // "you can guess it" -- a timestamp is guessable within a narrow window
+  // by anyone who saw the post's created_at. Random bytes aren't. Same
+  // getRandomBytesAsync API already relied on in secureStorage.ts.
+  const randomBytes = await Crypto.getRandomBytesAsync(16);
+  const random = Array.from(randomBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  const path = `${userId}/${prefix}-${random}.jpg`;
 
   const uploadResponse = await fetch(`${supabaseUrl}/storage/v1/object/${bucket}/${path}`, {
     method: 'POST',
