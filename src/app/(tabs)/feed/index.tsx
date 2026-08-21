@@ -120,6 +120,15 @@ export default function Feed() {
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.5}
         initialNumToRender={FEED_PAGE_SIZE}
+        // Default windowSize (21 screens) plus unbounded onEndReached growth
+        // and memory-cached photos never releases anything scrolled past --
+        // a long scroll session accumulates RAM until iOS's watchdog kills
+        // the app (confirmed via a fatal WatchdogTermination in Sentry).
+        // Tighter windowing actually unmounts off-screen rows instead of
+        // just visually clipping them.
+        windowSize={5}
+        maxToRenderPerBatch={FEED_PAGE_SIZE}
+        removeClippedSubviews
         ListFooterComponent={loadingMore ? <ActivityIndicator style={styles.footerSpinner} color={colors.primary} /> : null}
         ListEmptyComponent={
           <View style={styles.empty}>
