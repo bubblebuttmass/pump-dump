@@ -154,7 +154,11 @@ export default function Search() {
                         <View style={[styles.suggestedAvatar, styles.avatarPlaceholder]} />
                       )}
                       <Text style={styles.suggestedName} numberOfLines={1}>{u.display_name}</Text>
-                      <Text style={styles.suggestedMeta}>{u.followerCount} followers</Text>
+                      <Text style={styles.suggestedMeta}>
+                        {u.mutualCount > 0
+                          ? `${u.mutualCount} mutual${u.mutualCount === 1 ? '' : 's'}`
+                          : `${u.followerCount} follower${u.followerCount === 1 ? '' : 's'}`}
+                      </Text>
                       {u.gym && (
                         <View style={styles.suggestedDetailRow}>
                           <Ionicons name="business-outline" size={10} color={colors.textFaint} />

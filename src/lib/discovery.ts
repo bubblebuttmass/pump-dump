@@ -7,6 +7,10 @@ export interface SuggestedUser {
   gym: string | null;
   favoriteLift: string | null;
   followerCount: number;
+  // Count of people the viewer follows who also follow this user. 0 means
+  // this row is a popularity-ranked fallback (see get_suggested_users,
+  // migration 0028) rather than an actual mutual-connection suggestion.
+  mutualCount: number;
 }
 
 export interface TrendingExercise {
@@ -25,6 +29,7 @@ export async function getSuggestedUsers(viewerId: string, limit = 10): Promise<S
     gym: u.gym,
     favoriteLift: u.favorite_lift,
     followerCount: u.follower_count,
+    mutualCount: u.mutual_count,
   }));
 }
 
