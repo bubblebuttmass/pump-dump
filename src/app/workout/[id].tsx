@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useFocusEffect, router, Href } from 'expo-router';
 import { useAuth } from '../../lib/auth';
-import { getWorkoutDetail, WorkoutDetail, toggleLike, getComments, addComment, Comment } from '../../lib/social';
+import { getWorkoutDetail, WorkoutDetail, toggleLike, getComments, addComment, groupCommentsIntoThreads, Comment } from '../../lib/social';
 import { toggleBookmark } from '../../lib/bookmarks';
 import { deleteWorkout } from '../../lib/workouts';
 import { reportContent } from '../../lib/moderation';
@@ -22,7 +22,9 @@ export default function WorkoutDetailScreen() {
   const [detail, setDetail] = useState<WorkoutDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState('');
+  const [replyingTo, setReplyingTo] = useState<{ id: string; display_name: string } | null>(null);
   const listRef = useRef<FlatList>(null);
+  const commentInputRef = useRef<TextInput>(null);
 
   // KeyboardAvoidingView's padding math is calibrated for the regular
   // keyboard; switching to the emoji keyboard (taller, with its category
@@ -120,19 +122,29 @@ export default function WorkoutDetailScreen() {
   async function handleAddComment() {
     if (!session?.user || !detail || commentText.trim().length === 0) return;
     const body = commentText.trim();
+    const parentId = replyingTo?.id;
     const tempId = `temp-${Date.now()}`;
     // "You" is a placeholder, not a guess at the real display name -- the
     // optimistic row only lives on screen for the moment before the insert
     // resolves and swaps in the server's version (with the real name).
-    setComments((prev) => [...prev, { id: tempId, user_id: session.user.id, display_name: 'You', body, created_at: new Date().toISOString() }]);
+    setComments((prev) => [
+      ...prev,
+      { id: tempId, user_id: session.user.id, display_name: 'You', body, created_at: new Date().toISOString(), parent_comment_id: parentId ?? null },
+    ]);
     setCommentText('');
+    setReplyingTo(null);
     try {
-      const created = await addComment(session.user.id, detail.id, body);
+      const created = await addComment(session.user.id, detail.id, body, parentId);
       setComments((prev) => prev.map((c) => (c.id === tempId ? created : c)));
     } catch (e: any) {
       setComments((prev) => prev.filter((c) => c.id !== tempId));
       showAlert('Could not post comment', e.message ?? String(e));
     }
+  }
+
+  function handleStartReply(comment: Comment) {
+    setReplyingTo({ id: comment.id, display_name: comment.display_name });
+    commentInputRef.current?.focus();
   }
 
   if (!detail) {
@@ -249,24 +261,49 @@ export default function WorkoutDetailScreen() {
           <View style={styles.comments}>
             <Text style={styles.commentsTitle}>Comments</Text>
             {comments.length === 0 && <Text style={styles.emptyComments}>No comments yet. Say something.</Text>}
-            {comments.map((c) => (
-              <View key={c.id} style={styles.commentRow}>
-                <Text style={styles.comment}>
-                  <Text style={styles.commentAuthor}>{c.display_name}: </Text>
-                  {c.body}
-                </Text>
-                <Text style={styles.commentTime}>{formatRelativeTime(c.created_at)}</Text>
+            {groupCommentsIntoThreads(comments).map(({ comment: c, replies }) => (
+              <View key={c.id}>
+                <View style={styles.commentRow}>
+                  <Text style={styles.comment}>
+                    <Text style={styles.commentAuthor}>{c.display_name}: </Text>
+                    {c.body}
+                  </Text>
+                  <View style={styles.commentMetaRow}>
+                    <Text style={styles.commentTime}>{formatRelativeTime(c.created_at)}</Text>
+                    <Pressable onPress={() => handleStartReply(c)} hitSlop={8}>
+                      <Text style={styles.replyButton}>Reply</Text>
+                    </Pressable>
+                  </View>
+                </View>
+                {replies.map((r) => (
+                  <View key={r.id} style={[styles.commentRow, styles.replyRow]}>
+                    <Text style={styles.comment}>
+                      <Text style={styles.commentAuthor}>{r.display_name}: </Text>
+                      {r.body}
+                    </Text>
+                    <Text style={styles.commentTime}>{formatRelativeTime(r.created_at)}</Text>
+                  </View>
+                ))}
               </View>
             ))}
+            {replyingTo && (
+              <View style={styles.replyingToRow}>
+                <Text style={styles.replyingToText}>Replying to {replyingTo.display_name}</Text>
+                <Pressable onPress={() => setReplyingTo(null)} hitSlop={8} accessibilityRole="button" accessibilityLabel="Cancel reply">
+                  <Ionicons name="close" size={14} color={colors.textFaint} />
+                </Pressable>
+              </View>
+            )}
             <View style={styles.commentInputRow}>
               <TextInput
+                ref={commentInputRef}
                 style={styles.commentInput}
-                placeholder="Add a comment..."
+                placeholder={replyingTo ? `Reply to ${replyingTo.display_name}...` : 'Add a comment...'}
                 placeholderTextColor={colors.textFaint}
                 value={commentText}
                 onChangeText={setCommentText}
                 onFocus={handleCommentFocus}
-                accessibilityLabel="Add a comment"
+                accessibilityLabel={replyingTo ? `Reply to ${replyingTo.display_name}` : 'Add a comment'}
               />
               <Pressable onPress={handleAddComment} hitSlop={8}>
                 <Text style={styles.postButton}>Post</Text>
@@ -314,10 +351,15 @@ const styles = StyleSheet.create({
   commentsTitle: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
   emptyComments: { ...typeScale.caption, color: colors.textFaint, fontStyle: 'italic', marginBottom: spacing.sm },
   commentRow: { paddingVertical: spacing.xs },
+  replyRow: { marginLeft: spacing.xl, borderLeftWidth: 2, borderLeftColor: colors.border, paddingLeft: spacing.sm },
   comment: { ...typeScale.body, color: colors.text },
   commentAuthor: { fontWeight: '700' },
-  commentTime: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
-  commentInputRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, alignItems: 'center' },
+  commentMetaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
+  commentTime: { ...typeScale.micro, color: colors.textFaint },
+  replyButton: { ...typeScale.micro, color: colors.textFaint, fontWeight: '700' },
+  replyingToRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.md },
+  replyingToText: { ...typeScale.caption, color: colors.textFaint, fontStyle: 'italic' },
+  commentInputRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, alignItems: 'center' },
   commentInput: {
     flex: 1,
     borderWidth: 1,
