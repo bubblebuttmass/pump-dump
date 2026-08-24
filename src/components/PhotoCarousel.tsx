@@ -5,13 +5,16 @@ import { colors, radius, spacing } from '../lib/theme';
 
 interface PhotoCarouselProps {
   photos: string[];
-  height: number;
+  /** width / height. Posts are cropped to 3:4 at upload time (see log/index.tsx) --
+   * this defaults to match, so the display box lines up with what was actually
+   * cropped instead of re-cropping it again via `cover`. */
+  aspectRatio?: number;
   style?: StyleProp<ViewStyle>;
   /** Horizontal space (in px) between the screen edge and the carousel on each side. */
   edgeInset?: number;
 }
 
-export function PhotoCarousel({ photos, height, style, edgeInset = spacing.md }: PhotoCarouselProps) {
+export function PhotoCarousel({ photos, aspectRatio = 3 / 4, style, edgeInset = spacing.md }: PhotoCarouselProps) {
   const { width: screenWidth } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const itemWidth = screenWidth - edgeInset * 2;
@@ -20,7 +23,7 @@ export function PhotoCarousel({ photos, height, style, edgeInset = spacing.md }:
     return photos[0] ? (
       <Image
         source={{ uri: photos[0] }}
-        style={[{ width: '100%', height, borderRadius: radius.md }, style] as any}
+        style={[{ width: '100%', aspectRatio, borderRadius: radius.md }, style] as any}
         contentFit="cover"
         transition={200}
         cachePolicy="memory-disk"
@@ -41,7 +44,7 @@ export function PhotoCarousel({ photos, height, style, edgeInset = spacing.md }:
         renderItem={({ item }) => (
           <Image
             source={{ uri: item }}
-            style={{ width: itemWidth, height, borderRadius: radius.md }}
+            style={{ width: itemWidth, aspectRatio, borderRadius: radius.md }}
             contentFit="cover"
             transition={200}
             cachePolicy="memory-disk"

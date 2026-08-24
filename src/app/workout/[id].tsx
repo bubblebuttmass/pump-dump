@@ -225,7 +225,7 @@ export default function WorkoutDetailScreen() {
               </View>
             )}
             {detail.photos.length > 0 && (
-              <PhotoCarousel photos={detail.photos} height={320} style={styles.photo} edgeInset={spacing.lg} />
+              <PhotoCarousel photos={detail.photos} style={styles.photo} edgeInset={spacing.lg} />
             )}
             {detail.caption && <Text style={styles.caption}>{detail.caption}</Text>}
             {detail.sets.length > 0 && <Text style={styles.liftsHeading}>Lifts</Text>}
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   groupPillText: { ...typeScale.micro, color: colors.primary },
-  photo: { width: '100%', height: 320, borderRadius: radius.md, marginBottom: spacing.md },
+  photo: { width: '100%', borderRadius: radius.md, marginBottom: spacing.md },
   caption: { ...typeScale.body, color: colors.text, marginBottom: spacing.md },
   liftsHeading: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.xs },
   setRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderBottomWidth: 1, borderColor: colors.border },

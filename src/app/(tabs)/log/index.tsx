@@ -76,20 +76,24 @@ export default function LogWorkout() {
       showAlert('Camera access needed', 'Enable camera access in settings to snap your pump.');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: true, aspect: [3, 4] });
     if (!result.canceled) setPhotoUris((prev) => [...prev, result.assets[0].uri]);
   }
 
+  // Single-select, not allowsMultipleSelection -- the native picker can't show
+  // its crop UI in multi-select mode, so getting a crop per photo means
+  // picking one at a time. The "add another" tile below is how someone adds
+  // more than one, each getting its own crop step (matches handleTakePhoto).
   async function handleChoosePhoto() {
     if (photoUris.length >= MAX_PHOTOS) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.7,
-      allowsMultipleSelection: true,
-      selectionLimit: MAX_PHOTOS - photoUris.length,
+      allowsEditing: true,
+      aspect: [3, 4],
     });
     if (!result.canceled) {
-      setPhotoUris((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS));
+      setPhotoUris((prev) => [...prev, result.assets[0].uri].slice(0, MAX_PHOTOS));
     }
   }
 

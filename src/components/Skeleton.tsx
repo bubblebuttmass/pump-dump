@@ -53,7 +53,9 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   avatar: { width: 36, height: 36, borderRadius: 18 },
   nameLine: { width: 120, height: 16 },
-  photo: { width: '100%', height: 220, borderRadius: radius.md, marginBottom: spacing.md },
+  // Matches PhotoCarousel's default 3:4 aspect so the skeleton doesn't jump
+  // in height once the real photo loads in.
+  photo: { width: '100%', aspectRatio: 3 / 4, borderRadius: radius.md, marginBottom: spacing.md },
   textLine: { width: '90%', height: 12, marginTop: spacing.xs },
   profileHeader: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
   avatarLarge: { width: 80, height: 80, borderRadius: 40 },
