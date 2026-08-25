@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { StyleProp, ViewStyle, StyleSheet, View } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { useReducedMotion } from '../lib/useReducedMotion';
-import { colors, radius, spacing } from '../lib/theme';
+import { useThemeColors, radius, spacing, ThemeColors } from '../lib/theme';
 
 export function SkeletonBlock({ style }: { style?: StyleProp<ViewStyle> }) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const reducedMotion = useReducedMotion();
   const opacity = useSharedValue(0.4);
 
@@ -24,6 +26,8 @@ export function SkeletonBlock({ style }: { style?: StyleProp<ViewStyle> }) {
 }
 
 export function FeedCardSkeleton() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
@@ -38,6 +42,8 @@ export function FeedCardSkeleton() {
 }
 
 export function ProfileHeaderSkeleton() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.profileHeader}>
       <SkeletonBlock style={styles.avatarLarge} />
@@ -47,16 +53,18 @@ export function ProfileHeaderSkeleton() {
   );
 }
 
-const styles = StyleSheet.create({
-  block: { backgroundColor: colors.surfaceRaised, borderRadius: radius.sm },
-  card: { padding: spacing.lg, borderBottomWidth: 1, borderColor: colors.border },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
-  avatar: { width: 36, height: 36, borderRadius: 18 },
-  nameLine: { width: 120, height: 16 },
-  photo: { width: '100%', height: 220, borderRadius: radius.md, marginBottom: spacing.md },
-  textLine: { width: '90%', height: 12, marginTop: spacing.xs },
-  profileHeader: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
-  avatarLarge: { width: 80, height: 80, borderRadius: 40 },
-  profileName: { width: 140, height: 20, marginTop: spacing.sm },
-  profileBio: { width: 100, height: 14 },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    block: { backgroundColor: colors.surfaceRaised, borderRadius: radius.sm },
+    card: { padding: spacing.lg, borderBottomWidth: 1, borderColor: colors.border },
+    headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+    avatar: { width: 36, height: 36, borderRadius: 18 },
+    nameLine: { width: 120, height: 16 },
+    photo: { width: '100%', height: 220, borderRadius: radius.md, marginBottom: spacing.md },
+    textLine: { width: '90%', height: 12, marginTop: spacing.xs },
+    profileHeader: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
+    avatarLarge: { width: 80, height: 80, borderRadius: 40 },
+    profileName: { width: 140, height: 20, marginTop: spacing.sm },
+    profileBio: { width: 100, height: 14 },
+  });
+}

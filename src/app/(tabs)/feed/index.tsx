@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, router, Href } from 'expo-router';
@@ -10,10 +10,12 @@ import { getUnreadCount } from '../../../lib/notifications';
 import { AnimatedScreen } from '../../../components/AnimatedScreen';
 import { FeedCardSkeleton } from '../../../components/Skeleton';
 import { FeedCard } from '../../../components/FeedCard';
-import { colors, spacing, type as typeScale } from '../../../lib/theme';
+import { useThemeColors, spacing, type as typeScale, ThemeColors } from '../../../lib/theme';
 
 export default function Feed() {
   const { session } = useAuth();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -143,32 +145,34 @@ export default function Feed() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  brand: { ...typeScale.title, color: colors.text },
-  badge: {
-    position: 'absolute',
-    top: -4,
-    right: -6,
-    backgroundColor: colors.accent,
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    paddingHorizontal: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: { color: colors.white, fontSize: 10, fontWeight: '700' },
-  empty: { padding: spacing.xxl, alignItems: 'center', gap: spacing.xs },
-  emptyTitle: { ...typeScale.subtitle, color: colors.text, marginTop: spacing.sm },
-  emptyBody: { ...typeScale.body, color: colors.textMuted },
-  footerSpinner: { marginVertical: spacing.xl },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.xs,
+    },
+    brand: { ...typeScale.title, color: colors.text },
+    badge: {
+      position: 'absolute',
+      top: -4,
+      right: -6,
+      backgroundColor: colors.accent,
+      borderRadius: 8,
+      minWidth: 16,
+      height: 16,
+      paddingHorizontal: 3,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    badgeText: { color: colors.white, fontSize: 10, fontWeight: '700' },
+    empty: { padding: spacing.xxl, alignItems: 'center', gap: spacing.xs },
+    emptyTitle: { ...typeScale.subtitle, color: colors.text, marginTop: spacing.sm },
+    emptyBody: { ...typeScale.body, color: colors.textMuted },
+    footerSpinner: { marginVertical: spacing.xl },
+  });
+}

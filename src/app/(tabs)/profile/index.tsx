@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, ActivityIndicator, RefreshControl } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,10 +10,12 @@ import { getUserPosts } from '../../../lib/feed';
 import { formatRelativeTime } from '../../../lib/time';
 import { AnimatedScreen } from '../../../components/AnimatedScreen';
 import { ProfileHeaderSkeleton } from '../../../components/Skeleton';
-import { colors, radius, spacing, type as typeScale, shadow } from '../../../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, shadow, ThemeColors } from '../../../lib/theme';
 
 export default function Profile() {
   const { session } = useAuth();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [postsCursor, setPostsCursor] = useState<string | null>(null);
   const [loadingMorePosts, setLoadingMorePosts] = useState(false);
@@ -252,90 +254,92 @@ export default function Profile() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  listContent: { padding: spacing.lg },
-  footerSpinner: { marginVertical: spacing.lg },
-  header: { alignItems: 'center', marginBottom: spacing.xl },
-  avatar: { width: 84, height: 84, borderRadius: 42 },
-  avatarPlaceholder: { backgroundColor: colors.surfaceRaised },
-  name: { ...typeScale.title, color: colors.text, marginTop: spacing.sm },
-  bio: { ...typeScale.body, color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' },
-  bioEmpty: { ...typeScale.body, color: colors.textFaint, marginTop: spacing.xs, fontStyle: 'italic' },
-  statsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.md, marginTop: spacing.sm },
-  statItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  statText: { ...typeScale.caption, color: colors.textFaint },
-  traitRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.xs, marginTop: spacing.sm },
-  traitChip: { backgroundColor: colors.surfaceRaised, paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.pill },
-  traitChipText: { ...typeScale.micro, color: colors.textMuted },
-  badgeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.primaryMuted,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  badgeChipText: { ...typeScale.micro, color: colors.primary },
-  countsRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm },
-  counts: { ...typeScale.body, color: colors.textMuted },
-  streakItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.md },
-  editButton: { backgroundColor: colors.surfaceRaised, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm },
-  editButtonText: { ...typeScale.caption, color: colors.text },
-  completionCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  completionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm },
-  completionLabel: { ...typeScale.caption, color: colors.textMuted, fontWeight: '700' },
-  completionPercent: { ...typeScale.caption, color: colors.primary, fontWeight: '700' },
-  completionTrack: { height: 6, borderRadius: 3, backgroundColor: colors.surfaceRaised, overflow: 'hidden' },
-  completionFill: { height: '100%', borderRadius: 3, backgroundColor: colors.primary },
-  recapCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  recapTitle: { ...typeScale.caption, color: colors.textMuted, fontWeight: '700', marginBottom: spacing.sm },
-  recapRow: { flexDirection: 'row', gap: spacing.xl },
-  recapStat: { alignItems: 'center' },
-  recapNumber: { ...typeScale.title, color: colors.text },
-  recapStatLabel: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
-  bestLiftCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.gold,
-    marginBottom: spacing.md,
-    ...shadow.card,
-  },
-  bestLiftHeader: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: spacing.xs },
-  bestLiftLabel: { ...typeScale.micro, color: colors.gold, textTransform: 'uppercase', letterSpacing: 0.5 },
-  bestLiftExercise: { ...typeScale.subtitle, color: colors.text },
-  bestLiftValue: { ...typeScale.display, color: colors.text, marginTop: spacing.xs },
-  bestLiftEst: { ...typeScale.caption, color: colors.textMuted, marginTop: spacing.xs },
-  sectionTitle: { ...typeScale.subtitle, color: colors.text, marginTop: spacing.lg, marginBottom: spacing.sm },
-  emptyInline: { ...typeScale.caption, color: colors.textFaint, fontStyle: 'italic' },
-  prList: { gap: spacing.sm },
-  prCard: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radius.md, marginRight: spacing.sm, ...shadow.raised },
-  prIcon: { marginBottom: spacing.xs },
-  prExercise: { ...typeScale.caption, color: colors.text, fontWeight: '700' },
-  prValue: { ...typeScale.caption, color: colors.textMuted, marginTop: spacing.xs },
-  workoutRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-  },
-  workoutDetail: { ...typeScale.body, color: colors.text },
-  workoutTime: { ...typeScale.caption, color: colors.textFaint },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    listContent: { padding: spacing.lg },
+    footerSpinner: { marginVertical: spacing.lg },
+    header: { alignItems: 'center', marginBottom: spacing.xl },
+    avatar: { width: 84, height: 84, borderRadius: 42 },
+    avatarPlaceholder: { backgroundColor: colors.surfaceRaised },
+    name: { ...typeScale.title, color: colors.text, marginTop: spacing.sm },
+    bio: { ...typeScale.body, color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' },
+    bioEmpty: { ...typeScale.body, color: colors.textFaint, marginTop: spacing.xs, fontStyle: 'italic' },
+    statsRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.md, marginTop: spacing.sm },
+    statItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    statText: { ...typeScale.caption, color: colors.textFaint },
+    traitRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.xs, marginTop: spacing.sm },
+    traitChip: { backgroundColor: colors.surfaceRaised, paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.pill },
+    traitChipText: { ...typeScale.micro, color: colors.textMuted },
+    badgeChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.primaryMuted,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: radius.pill,
+    },
+    badgeChipText: { ...typeScale.micro, color: colors.primary },
+    countsRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm },
+    counts: { ...typeScale.body, color: colors.textMuted },
+    streakItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginTop: spacing.md },
+    editButton: { backgroundColor: colors.surfaceRaised, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.sm },
+    editButtonText: { ...typeScale.caption, color: colors.text },
+    completionCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    completionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm },
+    completionLabel: { ...typeScale.caption, color: colors.textMuted, fontWeight: '700' },
+    completionPercent: { ...typeScale.caption, color: colors.primary, fontWeight: '700' },
+    completionTrack: { height: 6, borderRadius: 3, backgroundColor: colors.surfaceRaised, overflow: 'hidden' },
+    completionFill: { height: '100%', borderRadius: 3, backgroundColor: colors.primary },
+    recapCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    recapTitle: { ...typeScale.caption, color: colors.textMuted, fontWeight: '700', marginBottom: spacing.sm },
+    recapRow: { flexDirection: 'row', gap: spacing.xl },
+    recapStat: { alignItems: 'center' },
+    recapNumber: { ...typeScale.title, color: colors.text },
+    recapStatLabel: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
+    bestLiftCard: {
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.gold,
+      marginBottom: spacing.md,
+      ...shadow.card,
+    },
+    bestLiftHeader: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: spacing.xs },
+    bestLiftLabel: { ...typeScale.micro, color: colors.gold, textTransform: 'uppercase', letterSpacing: 0.5 },
+    bestLiftExercise: { ...typeScale.subtitle, color: colors.text },
+    bestLiftValue: { ...typeScale.display, color: colors.text, marginTop: spacing.xs },
+    bestLiftEst: { ...typeScale.caption, color: colors.textMuted, marginTop: spacing.xs },
+    sectionTitle: { ...typeScale.subtitle, color: colors.text, marginTop: spacing.lg, marginBottom: spacing.sm },
+    emptyInline: { ...typeScale.caption, color: colors.textFaint, fontStyle: 'italic' },
+    prList: { gap: spacing.sm },
+    prCard: { padding: spacing.md, backgroundColor: colors.surface, borderRadius: radius.md, marginRight: spacing.sm, ...shadow.raised },
+    prIcon: { marginBottom: spacing.xs },
+    prExercise: { ...typeScale.caption, color: colors.text, fontWeight: '700' },
+    prValue: { ...typeScale.caption, color: colors.textMuted, marginTop: spacing.xs },
+    workoutRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+    workoutDetail: { ...typeScale.body, color: colors.text },
+    workoutTime: { ...typeScale.caption, color: colors.textFaint },
+  });
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, TextInput, Text, Pressable, StyleSheet, Platform } from 'react-native';
 import { Link, router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -7,11 +7,13 @@ import { supabase } from '../../lib/supabase';
 import { showAlert } from '../../lib/alert';
 import { AnimatedView } from '../../components/AnimatedScreen';
 import { PressableScale } from '../../components/PressableScale';
-import { colors, radius, spacing, type as typeScale } from '../../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, ThemeColors } from '../../lib/theme';
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function Login() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -126,22 +128,24 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.bg },
-  brand: { ...typeScale.subtitle, color: colors.primary, textAlign: 'center', marginBottom: spacing.sm },
-  title: { ...typeScale.display, color: colors.text, marginBottom: spacing.xl },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    color: colors.text,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center' },
-  oauthButton: { backgroundColor: colors.surfaceRaised, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.md },
-  buttonText: { color: colors.white, fontWeight: '700' },
-  link: { marginTop: spacing.lg, alignSelf: 'center' },
-  linkText: { color: colors.textMuted },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.bg },
+    brand: { ...typeScale.subtitle, color: colors.primary, textAlign: 'center', marginBottom: spacing.sm },
+    title: { ...typeScale.display, color: colors.text, marginBottom: spacing.xl },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      color: colors.text,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center' },
+    oauthButton: { backgroundColor: colors.surfaceRaised, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.md },
+    buttonText: { color: colors.white, fontWeight: '700' },
+    link: { marginTop: spacing.lg, alignSelf: 'center' },
+    linkText: { color: colors.textMuted },
+  });
+}

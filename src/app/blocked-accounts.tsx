@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,10 +9,12 @@ import { showAlert } from '../lib/alert';
 import { UserResult } from '../lib/social-graph';
 import { AnimatedScreen } from '../components/AnimatedScreen';
 import { PressableScale } from '../components/PressableScale';
-import { colors, radius, spacing, type as typeScale } from '../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, ThemeColors } from '../lib/theme';
 
 export default function BlockedAccounts() {
   const { session } = useAuth();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [users, setUsers] = useState<UserResult[]>([]);
 
   useFocusEffect(
@@ -70,24 +72,26 @@ export default function BlockedAccounts() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  backBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs, gap: spacing.lg },
-  title: { ...typeScale.subtitle, color: colors.text },
-  list: { padding: spacing.lg },
-  empty: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xxl },
-  emptyText: { ...typeScale.body, color: colors.textFaint },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-  },
-  avatar: { width: 36, height: 36, borderRadius: 18 },
-  avatarPlaceholder: { backgroundColor: colors.surfaceRaised },
-  name: { ...typeScale.body, color: colors.text, flex: 1 },
-  unblockButton: { backgroundColor: colors.surfaceRaised, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
-  unblockButtonText: { ...typeScale.caption, color: colors.textMuted, fontWeight: '700' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    backBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs, gap: spacing.lg },
+    title: { ...typeScale.subtitle, color: colors.text },
+    list: { padding: spacing.lg },
+    empty: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xxl },
+    emptyText: { ...typeScale.body, color: colors.textFaint },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+    avatar: { width: 36, height: 36, borderRadius: 18 },
+    avatarPlaceholder: { backgroundColor: colors.surfaceRaised },
+    name: { ...typeScale.body, color: colors.text, flex: 1 },
+    unblockButton: { backgroundColor: colors.surfaceRaised, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
+    unblockButtonText: { ...typeScale.caption, color: colors.textMuted, fontWeight: '700' },
+  });
+}

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, KeyboardAvoidingView, Platform, StyleSheet, ActivityIndicator, Share, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -12,13 +12,15 @@ import { showAlert } from '../../lib/alert';
 import { formatRelativeTime } from '../../lib/time';
 import { AnimatedScreen } from '../../components/AnimatedScreen';
 import { PhotoCarousel } from '../../components/PhotoCarousel';
-import { colors, radius, spacing, type as typeScale } from '../../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, ThemeColors } from '../../lib/theme';
 
 const REPORT_REASONS = ['Spam', 'Harassment', 'Inappropriate content', 'Impersonation', 'Other'];
 
 export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [detail, setDetail] = useState<WorkoutDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState('');
@@ -239,7 +241,7 @@ export default function WorkoutDetailScreen() {
             </Text>
             {item.isPR && (
               <View style={styles.prBadge}>
-                <Ionicons name="trophy" size={11} color={colors.bg} />
+                <Ionicons name="trophy" size={11} color={colors.black} />
                 <Text style={styles.prBadgeText}>PR</Text>
               </View>
             )}
@@ -280,52 +282,54 @@ export default function WorkoutDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  flex: { flex: 1 },
-  loadingSpinner: { marginTop: spacing.xxl },
-  backBar: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs },
-  listContent: { padding: spacing.lg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.md },
-  name: { ...typeScale.title, color: colors.text },
-  time: { ...typeScale.caption, color: colors.textFaint, marginTop: 2 },
-  gymRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  gymText: { ...typeScale.micro, color: colors.textFaint },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  likeButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  likeCount: { ...typeScale.body, color: colors.textMuted },
-  groupPill: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.primaryMuted,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-    marginBottom: spacing.sm,
-  },
-  groupPillText: { ...typeScale.micro, color: colors.primary },
-  photo: { width: '100%', height: 320, borderRadius: radius.md, marginBottom: spacing.md },
-  caption: { ...typeScale.body, color: colors.text, marginBottom: spacing.md },
-  liftsHeading: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.xs },
-  setRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderBottomWidth: 1, borderColor: colors.border },
-  setLine: { ...typeScale.body, color: colors.textMuted },
-  prBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.gold, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm },
-  prBadgeText: { ...typeScale.micro, color: colors.bg },
-  comments: { marginTop: spacing.xl },
-  commentsTitle: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
-  emptyComments: { ...typeScale.caption, color: colors.textFaint, fontStyle: 'italic', marginBottom: spacing.sm },
-  commentRow: { paddingVertical: spacing.xs },
-  comment: { ...typeScale.body, color: colors.text },
-  commentAuthor: { fontWeight: '700' },
-  commentTime: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
-  commentInputRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, alignItems: 'center' },
-  commentInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    color: colors.text,
-    borderRadius: radius.md,
-    padding: spacing.sm + 2,
-  },
-  postButton: { color: colors.primary, fontWeight: '700' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    flex: { flex: 1 },
+    loadingSpinner: { marginTop: spacing.xxl },
+    backBar: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs },
+    listContent: { padding: spacing.lg },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.md },
+    name: { ...typeScale.title, color: colors.text },
+    time: { ...typeScale.caption, color: colors.textFaint, marginTop: 2 },
+    gymRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+    gymText: { ...typeScale.micro, color: colors.textFaint },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    likeButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    likeCount: { ...typeScale.body, color: colors.textMuted },
+    groupPill: {
+      alignSelf: 'flex-start',
+      backgroundColor: colors.primaryMuted,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: radius.pill,
+      marginBottom: spacing.sm,
+    },
+    groupPillText: { ...typeScale.micro, color: colors.primary },
+    photo: { width: '100%', height: 320, borderRadius: radius.md, marginBottom: spacing.md },
+    caption: { ...typeScale.body, color: colors.text, marginBottom: spacing.md },
+    liftsHeading: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.xs },
+    setRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.sm, borderBottomWidth: 1, borderColor: colors.border },
+    setLine: { ...typeScale.body, color: colors.textMuted },
+    prBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.gold, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm },
+    prBadgeText: { ...typeScale.micro, color: colors.black },
+    comments: { marginTop: spacing.xl },
+    commentsTitle: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
+    emptyComments: { ...typeScale.caption, color: colors.textFaint, fontStyle: 'italic', marginBottom: spacing.sm },
+    commentRow: { paddingVertical: spacing.xs },
+    comment: { ...typeScale.body, color: colors.text },
+    commentAuthor: { fontWeight: '700' },
+    commentTime: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
+    commentInputRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, alignItems: 'center' },
+    commentInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      color: colors.text,
+      borderRadius: radius.md,
+      padding: spacing.sm + 2,
+    },
+    postButton: { color: colors.primary, fontWeight: '700' },
+  });
+}

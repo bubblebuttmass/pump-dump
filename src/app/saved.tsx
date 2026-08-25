@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, Href } from 'expo-router';
@@ -8,10 +8,12 @@ import { getBookmarkedPosts, toggleBookmark } from '../lib/bookmarks';
 import { toggleLike } from '../lib/social';
 import { AnimatedScreen } from '../components/AnimatedScreen';
 import { FeedCard } from '../components/FeedCard';
-import { colors, spacing, type as typeScale } from '../lib/theme';
+import { useThemeColors, spacing, type as typeScale, ThemeColors } from '../lib/theme';
 
 export default function Saved() {
   const { session } = useAuth();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,12 +116,14 @@ export default function Saved() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  backBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs, gap: spacing.lg },
-  title: { ...typeScale.subtitle, color: colors.text },
-  loadingSpinner: { marginTop: spacing.xxl },
-  footerSpinner: { marginVertical: spacing.lg },
-  empty: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xxl, paddingHorizontal: spacing.xl },
-  emptyText: { ...typeScale.body, color: colors.textFaint, textAlign: 'center' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    backBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs, gap: spacing.lg },
+    title: { ...typeScale.subtitle, color: colors.text },
+    loadingSpinner: { marginTop: spacing.xxl },
+    footerSpinner: { marginVertical: spacing.lg },
+    empty: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xxl, paddingHorizontal: spacing.xl },
+    emptyText: { ...typeScale.body, color: colors.textFaint, textAlign: 'center' },
+  });
+}

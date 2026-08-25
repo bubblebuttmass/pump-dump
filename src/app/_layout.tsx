@@ -5,11 +5,12 @@ import NetInfo from '@react-native-community/netinfo';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../lib/auth';
 import { flushQueue } from '../lib/offlineQueue';
-import { colors } from '../lib/theme';
+import { ThemeProvider, useTheme } from '../lib/theme';
 import { Sentry } from '../lib/sentry';
 
 function RootNavigation() {
   const { session, loading } = useAuth();
+  const { colors, scheme } = useTheme();
   const segments = useSegments();
   const router = useRouter();
 
@@ -48,7 +49,7 @@ function RootNavigation() {
   // (Feed), losing whichever tab (e.g. Profile) the user actually came from.
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={scheme === 'light' ? 'dark' : 'light'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
@@ -68,9 +69,11 @@ function RootNavigation() {
 function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <RootNavigation />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <RootNavigation />
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

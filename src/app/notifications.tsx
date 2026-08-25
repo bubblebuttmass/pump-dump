@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +7,7 @@ import { useAuth } from '../lib/auth';
 import { getNotifications, markAllRead, AppNotification } from '../lib/notifications';
 import { formatRelativeTime } from '../lib/time';
 import { AnimatedScreen } from '../components/AnimatedScreen';
-import { colors, radius, spacing, type as typeScale } from '../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, ThemeColors } from '../lib/theme';
 
 function describeNotification(n: AppNotification): string {
   switch (n.type) {
@@ -22,6 +22,8 @@ function describeNotification(n: AppNotification): string {
 
 export default function Notifications() {
   const { session } = useAuth();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [items, setItems] = useState<AppNotification[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,28 +108,30 @@ export default function Notifications() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  backBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs, gap: spacing.lg },
-  title: { ...typeScale.subtitle, color: colors.text },
-  loadingSpinner: { marginTop: spacing.xxl },
-  footerSpinner: { marginVertical: spacing.lg },
-  list: { padding: spacing.lg },
-  empty: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xxl },
-  emptyText: { ...typeScale.body, color: colors.textFaint },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-  },
-  rowUnread: { backgroundColor: colors.surfaceRaised, borderRadius: radius.md, paddingHorizontal: spacing.sm },
-  avatar: { width: 40, height: 40, borderRadius: 20 },
-  avatarPlaceholder: { backgroundColor: colors.surfaceRaised },
-  rowBody: { flex: 1 },
-  rowText: { ...typeScale.body, color: colors.textMuted },
-  actorName: { color: colors.text, fontWeight: '700' },
-  rowTime: { ...typeScale.caption, color: colors.textFaint, marginTop: 2 },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    backBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs, gap: spacing.lg },
+    title: { ...typeScale.subtitle, color: colors.text },
+    loadingSpinner: { marginTop: spacing.xxl },
+    footerSpinner: { marginVertical: spacing.lg },
+    list: { padding: spacing.lg },
+    empty: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xxl },
+    emptyText: { ...typeScale.body, color: colors.textFaint },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+    rowUnread: { backgroundColor: colors.surfaceRaised, borderRadius: radius.md, paddingHorizontal: spacing.sm },
+    avatar: { width: 40, height: 40, borderRadius: 20 },
+    avatarPlaceholder: { backgroundColor: colors.surfaceRaised },
+    rowBody: { flex: 1 },
+    rowText: { ...typeScale.body, color: colors.textMuted },
+    actorName: { color: colors.text, fontWeight: '700' },
+    rowTime: { ...typeScale.caption, color: colors.textFaint, marginTop: 2 },
+  });
+}

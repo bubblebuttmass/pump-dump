@@ -1,8 +1,9 @@
 import { Tabs } from 'expo-router';
-import { colors } from '../../lib/theme';
+import { useThemeColors } from '../../lib/theme';
 import { AnimatedTabIcon } from '../../components/AnimatedTabIcon';
 
 export default function TabsLayout() {
+  const colors = useThemeColors();
   return (
     <Tabs
       screenOptions={{

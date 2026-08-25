@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,11 +8,13 @@ import { getFollowers, getFollowStatus, follow, unfollow, UserResult, FollowStat
 import { showAlert } from '../../../lib/alert';
 import { AnimatedScreen } from '../../../components/AnimatedScreen';
 import { PressableScale } from '../../../components/PressableScale';
-import { colors, radius, spacing, type as typeScale } from '../../../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, ThemeColors } from '../../../lib/theme';
 
 export default function Followers() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [users, setUsers] = useState<UserResult[]>([]);
   const [followingMap, setFollowingMap] = useState<Record<string, FollowStatus>>({});
 
@@ -99,27 +101,29 @@ export default function Followers() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  backBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs, gap: spacing.lg },
-  title: { ...typeScale.subtitle, color: colors.text },
-  list: { padding: spacing.lg },
-  empty: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xxl },
-  emptyText: { ...typeScale.body, color: colors.textFaint },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-  },
-  nameArea: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  avatar: { width: 40, height: 40, borderRadius: 20 },
-  avatarPlaceholder: { backgroundColor: colors.surfaceRaised },
-  name: { ...typeScale.body, color: colors.text },
-  followButton: { backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
-  followButtonActive: { backgroundColor: colors.surfaceRaised },
-  followButtonText: { ...typeScale.caption, color: colors.white, fontWeight: '700' },
-  followButtonTextActive: { color: colors.textMuted },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    backBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.xs, gap: spacing.lg },
+    title: { ...typeScale.subtitle, color: colors.text },
+    list: { padding: spacing.lg },
+    empty: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xxl },
+    emptyText: { ...typeScale.body, color: colors.textFaint },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+    nameArea: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    avatar: { width: 40, height: 40, borderRadius: 20 },
+    avatarPlaceholder: { backgroundColor: colors.surfaceRaised },
+    name: { ...typeScale.body, color: colors.text },
+    followButton: { backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
+    followButtonActive: { backgroundColor: colors.surfaceRaised },
+    followButtonText: { ...typeScale.caption, color: colors.white, fontWeight: '700' },
+    followButtonTextActive: { color: colors.textMuted },
+  });
+}

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, TextInput, ScrollView, Pressable, Keyboard, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,10 +11,12 @@ import { getRecentSearches, addRecentSearch, removeRecentSearch } from '../../..
 import { showAlert } from '../../../lib/alert';
 import { AnimatedScreen } from '../../../components/AnimatedScreen';
 import { PressableScale } from '../../../components/PressableScale';
-import { colors, radius, spacing, type as typeScale, shadow } from '../../../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, shadow, ThemeColors } from '../../../lib/theme';
 
 export default function Search() {
   const { session } = useAuth();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [query, setQuery] = useState('');
   const [userResults, setUserResults] = useState<UserResult[]>([]);
   const [exerciseResults, setExerciseResults] = useState<Exercise[]>([]);
@@ -236,84 +238,86 @@ export default function Search() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
-  scroll: { paddingBottom: spacing.xxl },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
-  },
-  inputIcon: { marginRight: spacing.xs },
-  input: { flex: 1, paddingVertical: spacing.md, color: colors.text, ...typeScale.body },
-  section: { marginBottom: spacing.lg },
-  sectionTitle: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
-  emptyInline: { ...typeScale.caption, color: colors.textFaint, fontStyle: 'italic' },
-  chipWrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  recentChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-  },
-  recentChipText: { ...typeScale.caption, color: colors.textMuted },
-  trendingChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-  },
-  trendingChipText: { ...typeScale.caption, color: colors.textMuted },
-  horizontalList: { gap: spacing.md },
-  suggestedCard: {
-    width: 148,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    ...shadow.raised,
-  },
-  suggestedCardTap: { alignItems: 'center', width: '100%' },
-  suggestedAvatar: { width: 56, height: 56, borderRadius: 28 },
-  avatarPlaceholder: { backgroundColor: colors.surfaceRaised },
-  suggestedName: { ...typeScale.caption, color: colors.text, fontWeight: '700', marginTop: spacing.sm },
-  suggestedMeta: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
-  suggestedDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3, maxWidth: '100%' },
-  suggestedDetailText: { ...typeScale.micro, color: colors.textFaint, flexShrink: 1 },
-  followButtonSmall: {
-    marginTop: spacing.sm,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-  },
-  nameArea: { flex: 1 },
-  name: { ...typeScale.body, color: colors.text },
-  followButton: { backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
-  followButtonActive: { backgroundColor: colors.surfaceRaised },
-  followButtonText: { ...typeScale.caption, color: colors.white, fontWeight: '700' },
-  followButtonTextActive: { color: colors.textMuted },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
+    scroll: { paddingBottom: spacing.xxl },
+    inputWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      marginBottom: spacing.md,
+    },
+    inputIcon: { marginRight: spacing.xs },
+    input: { flex: 1, paddingVertical: spacing.md, color: colors.text, ...typeScale.body },
+    section: { marginBottom: spacing.lg },
+    sectionTitle: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
+    emptyInline: { ...typeScale.caption, color: colors.textFaint, fontStyle: 'italic' },
+    chipWrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    recentChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.pill,
+    },
+    recentChipText: { ...typeScale.caption, color: colors.textMuted },
+    trendingChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.pill,
+    },
+    trendingChipText: { ...typeScale.caption, color: colors.textMuted },
+    horizontalList: { gap: spacing.md },
+    suggestedCard: {
+      width: 148,
+      padding: spacing.md,
+      backgroundColor: colors.surface,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      ...shadow.raised,
+    },
+    suggestedCardTap: { alignItems: 'center', width: '100%' },
+    suggestedAvatar: { width: 56, height: 56, borderRadius: 28 },
+    avatarPlaceholder: { backgroundColor: colors.surfaceRaised },
+    suggestedName: { ...typeScale.caption, color: colors.text, fontWeight: '700', marginTop: spacing.sm },
+    suggestedMeta: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
+    suggestedDetailRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3, maxWidth: '100%' },
+    suggestedDetailText: { ...typeScale.micro, color: colors.textFaint, flexShrink: 1 },
+    followButtonSmall: {
+      marginTop: spacing.sm,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 6,
+      borderRadius: radius.sm,
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+    nameArea: { flex: 1 },
+    name: { ...typeScale.body, color: colors.text },
+    followButton: { backgroundColor: colors.primary, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.sm },
+    followButtonActive: { backgroundColor: colors.surfaceRaised },
+    followButtonText: { ...typeScale.caption, color: colors.white, fontWeight: '700' },
+    followButtonTextActive: { color: colors.textMuted },
+  });
+}

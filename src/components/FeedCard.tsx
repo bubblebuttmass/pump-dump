@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, withDelay, Easing, FadeInDown } from 'react-native-reanimated';
@@ -8,7 +8,7 @@ import { formatRelativeTime } from '../lib/time';
 import { PhotoCarousel } from './PhotoCarousel';
 import { PressableScale } from './PressableScale';
 import { useReducedMotion } from '../lib/useReducedMotion';
-import { colors, radius, spacing, type as typeScale, shadow } from '../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, shadow, ThemeColors } from '../lib/theme';
 
 const DOUBLE_TAP_MS = 280;
 // Stagger only the first screenful -- beyond that the delay would just make
@@ -26,6 +26,8 @@ interface FeedCardProps {
 }
 
 export function FeedCard({ post, index = STAGGER_CAP, onOpen, onOpenUser, onToggleLike, onToggleBookmark }: FeedCardProps) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const reducedMotion = useReducedMotion();
   const lastTap = useRef(0);
   const pendingTap = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -101,7 +103,7 @@ export function FeedCard({ post, index = STAGGER_CAP, onOpen, onOpenUser, onTogg
         </View>
         {post.hasPR && (
           <View style={styles.prBadge}>
-            <Ionicons name="trophy" size={12} color={colors.bg} />
+            <Ionicons name="trophy" size={12} color={colors.black} />
             <Text style={styles.prBadgeText}>New PR</Text>
           </View>
         )}
@@ -206,52 +208,54 @@ export function FeedCard({ post, index = STAGGER_CAP, onOpen, onOpenUser, onTogg
   );
 }
 
-const styles = StyleSheet.create({
-  cardWrapper: { margin: spacing.md },
-  card: {
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    ...shadow.card,
-  },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
-  name: { ...typeScale.subtitle, color: colors.text },
-  groupPill: { backgroundColor: colors.primaryMuted, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.pill },
-  groupPillText: { ...typeScale.micro, color: colors.primary },
-  prBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.gold,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
-  },
-  prBadgeText: { ...typeScale.micro, color: colors.bg },
-  photo: { width: '100%', height: 260, borderRadius: radius.md, marginTop: spacing.md },
-  gymRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  gymText: { ...typeScale.micro, color: colors.textFaint },
-  burst: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    marginTop: spacing.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  caption: { ...typeScale.body, color: colors.text, marginTop: spacing.md },
-  setLine: { ...typeScale.caption, color: colors.textMuted, marginTop: spacing.xs },
-  more: { ...typeScale.caption, color: colors.textFaint, marginTop: spacing.xs },
-  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md },
-  metaLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  metaRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  meta: { ...typeScale.caption, color: colors.textFaint },
-  metaTime: { ...typeScale.caption, color: colors.textFaint },
-  commentPreview: { ...typeScale.caption, color: colors.textMuted, marginTop: spacing.sm },
-  commentPreviewAuthor: { fontWeight: '700', color: colors.text },
-  viewAllComments: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    cardWrapper: { margin: spacing.md },
+    card: {
+      padding: spacing.lg,
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      ...shadow.card,
+    },
+    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
+    name: { ...typeScale.subtitle, color: colors.text },
+    groupPill: { backgroundColor: colors.primaryMuted, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.pill },
+    groupPillText: { ...typeScale.micro, color: colors.primary },
+    prBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.gold,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: radius.sm,
+    },
+    prBadgeText: { ...typeScale.micro, color: colors.black },
+    photo: { width: '100%', height: 260, borderRadius: radius.md, marginTop: spacing.md },
+    gymRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+    gymText: { ...typeScale.micro, color: colors.textFaint },
+    burst: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      marginTop: spacing.md,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    caption: { ...typeScale.body, color: colors.text, marginTop: spacing.md },
+    setLine: { ...typeScale.caption, color: colors.textMuted, marginTop: spacing.xs },
+    more: { ...typeScale.caption, color: colors.textFaint, marginTop: spacing.xs },
+    metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md },
+    metaLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    metaRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    meta: { ...typeScale.caption, color: colors.textFaint },
+    metaTime: { ...typeScale.caption, color: colors.textFaint },
+    commentPreview: { ...typeScale.caption, color: colors.textMuted, marginTop: spacing.sm },
+    commentPreviewAuthor: { fontWeight: '700', color: colors.text },
+    viewAllComments: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
+  });
+}

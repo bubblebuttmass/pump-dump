@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, TextInput, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -10,10 +10,12 @@ import { showAlert } from '../../../lib/alert';
 import { TRAIT_CATEGORIES } from '../../../lib/traits';
 import { AnimatedView } from '../../../components/AnimatedScreen';
 import { PressableScale } from '../../../components/PressableScale';
-import { colors, radius, spacing, type as typeScale } from '../../../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, ThemeColors } from '../../../lib/theme';
 
 export default function EditProfile() {
   const { session } = useAuth();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [gym, setGym] = useState('');
@@ -181,47 +183,49 @@ export default function EditProfile() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: spacing.xl },
-  avatarPicker: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.surfaceRaised,
-    alignSelf: 'center',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  avatar: { width: 100, height: 100, borderRadius: 50 },
-  choosePhotoText: { ...typeScale.caption, color: colors.textMuted },
-  label: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.xs },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    color: colors.text,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  bioInput: { minHeight: 80, textAlignVertical: 'top' },
-  inputDisabled: { opacity: 0.5 },
-  usernameCooldownHint: { ...typeScale.caption, color: colors.textFaint, marginTop: -spacing.md, marginBottom: spacing.lg },
-  category: { marginBottom: spacing.lg },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: {
-    paddingHorizontal: spacing.md + 2,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
-  chipTextSelected: { color: colors.white },
-  button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.sm },
-  buttonText: { color: colors.white, fontWeight: '700' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    scroll: { padding: spacing.xl },
+    avatarPicker: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: colors.surfaceRaised,
+      alignSelf: 'center',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: spacing.xl,
+    },
+    avatar: { width: 100, height: 100, borderRadius: 50 },
+    choosePhotoText: { ...typeScale.caption, color: colors.textMuted },
+    label: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.xs },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      color: colors.text,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.lg,
+    },
+    bioInput: { minHeight: 80, textAlignVertical: 'top' },
+    inputDisabled: { opacity: 0.5 },
+    usernameCooldownHint: { ...typeScale.caption, color: colors.textFaint, marginTop: -spacing.md, marginBottom: spacing.lg },
+    category: { marginBottom: spacing.lg },
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    chip: {
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.pill,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
+    chipTextSelected: { color: colors.white },
+    button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.sm },
+    buttonText: { color: colors.white, fontWeight: '700' },
+  });
+}

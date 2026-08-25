@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router';
-import { colors } from '../../../lib/theme';
+import { useThemeColors } from '../../../lib/theme';
 
 export default function ProfileLayout() {
+  const colors = useThemeColors();
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" options={{ title: 'Profile' }} />

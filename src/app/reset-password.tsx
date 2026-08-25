@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, TextInput, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import * as Linking from 'expo-linking';
@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { showAlert } from '../lib/alert';
 import { AnimatedView } from '../components/AnimatedScreen';
 import { PressableScale } from '../components/PressableScale';
-import { colors, radius, spacing, type as typeScale } from '../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, ThemeColors } from '../lib/theme';
 
 // The recovery email link lands here as lifterapp://reset-password#access_token=...
 // &refresh_token=...&type=recovery -- the tokens ride in the hash fragment (same
@@ -48,6 +48,8 @@ function useRecoverySession() {
 
 export default function ResetPassword() {
   const status = useRecoverySession();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [password, setPassword] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -104,19 +106,21 @@ export default function ResetPassword() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.bg },
-  title: { ...typeScale.display, color: colors.text, marginBottom: spacing.md },
-  body: { ...typeScale.body, color: colors.textMuted, marginBottom: spacing.xl },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    color: colors.text,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center' },
-  buttonText: { color: colors.white, fontWeight: '700' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.bg },
+    title: { ...typeScale.display, color: colors.text, marginBottom: spacing.md },
+    body: { ...typeScale.body, color: colors.textMuted, marginBottom: spacing.xl },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      color: colors.text,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center' },
+    buttonText: { color: colors.white, fontWeight: '700' },
+  });
+}

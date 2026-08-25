@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, TextInput, Text, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { showAlert } from '../../lib/alert';
 import { AnimatedView } from '../../components/AnimatedScreen';
 import { PressableScale } from '../../components/PressableScale';
-import { colors, radius, spacing, type as typeScale } from '../../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, ThemeColors } from '../../lib/theme';
 
 export default function ForgotPassword() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -61,19 +63,21 @@ export default function ForgotPassword() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.bg },
-  title: { ...typeScale.display, color: colors.text, marginBottom: spacing.md },
-  body: { ...typeScale.body, color: colors.textMuted, marginBottom: spacing.xl },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    color: colors.text,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center' },
-  buttonText: { color: colors.white, fontWeight: '700' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.bg },
+    title: { ...typeScale.display, color: colors.text, marginBottom: spacing.md },
+    body: { ...typeScale.body, color: colors.textMuted, marginBottom: spacing.xl },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      color: colors.text,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center' },
+    buttonText: { color: colors.white, fontWeight: '700' },
+  });
+}

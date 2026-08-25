@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, FlatList, StyleSheet, useWindowDimensions, StyleProp, ViewStyle } from 'react-native';
 import { Image } from 'expo-image';
-import { colors, radius, spacing } from '../lib/theme';
+import { useThemeColors, radius, spacing, ThemeColors } from '../lib/theme';
 
 interface PhotoCarouselProps {
   photos: string[];
@@ -12,6 +12,8 @@ interface PhotoCarouselProps {
 }
 
 export function PhotoCarousel({ photos, height, style, edgeInset = spacing.md }: PhotoCarouselProps) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { width: screenWidth } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const itemWidth = screenWidth - edgeInset * 2;
@@ -57,8 +59,10 @@ export function PhotoCarousel({ photos, height, style, edgeInset = spacing.md }:
   );
 }
 
-const styles = StyleSheet.create({
-  dots: { flexDirection: 'row', justifyContent: 'center', gap: 5, marginTop: spacing.xs },
-  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.border },
-  dotActive: { backgroundColor: colors.primary, width: 14 },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    dots: { flexDirection: 'row', justifyContent: 'center', gap: 5, marginTop: spacing.xs },
+    dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.border },
+    dotActive: { backgroundColor: colors.primary, width: 14 },
+  });
+}

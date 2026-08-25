@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, Pressable, Switch, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -11,10 +11,18 @@ import { deleteAccount } from '../lib/account';
 import { registerForPushNotifications, unregisterPushNotifications, hasPushToken } from '../lib/pushNotifications';
 import { showAlert } from '../lib/alert';
 import { AnimatedScreen } from '../components/AnimatedScreen';
-import { colors, radius, spacing, type as typeScale } from '../lib/theme';
+import { useTheme, radius, spacing, type as typeScale, ThemeColors, ThemeMode } from '../lib/theme';
+
+const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
+  { mode: 'light', label: 'Light', icon: 'sunny-outline' },
+  { mode: 'dark', label: 'Dark', icon: 'moon-outline' },
+  { mode: 'system', label: 'System', icon: 'phone-portrait-outline' },
+];
 
 export default function Settings() {
   const { session } = useAuth();
+  const { colors, mode, setMode } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [isPrivate, setIsPrivate] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
@@ -153,6 +161,28 @@ export default function Settings() {
         </Pressable>
       </View>
 
+      <Text style={styles.sectionTitle}>Appearance</Text>
+      <View style={styles.card}>
+        <View style={styles.themeRow}>
+          {THEME_OPTIONS.map((option) => {
+            const selected = mode === option.mode;
+            return (
+              <Pressable
+                key={option.mode}
+                style={[styles.themeOption, selected && styles.themeOptionSelected]}
+                onPress={() => setMode(option.mode)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`${option.label} theme`}
+              >
+                <Ionicons name={option.icon} size={18} color={selected ? colors.primary : colors.textMuted} />
+                <Text style={[styles.themeOptionText, selected && styles.themeOptionTextSelected]}>{option.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
       <Text style={styles.sectionTitle}>Notifications</Text>
       <View style={styles.card}>
         <View style={styles.row}>
@@ -211,38 +241,53 @@ export default function Settings() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
-  backBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginBottom: spacing.lg },
-  title: { ...typeScale.subtitle, color: colors.text },
-  sectionTitle: { ...typeScale.caption, color: colors.textFaint, marginBottom: spacing.sm, marginTop: spacing.lg, textTransform: 'uppercase' },
-  card: { backgroundColor: colors.surface, borderRadius: radius.md, overflow: 'hidden' },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    gap: spacing.md,
-  },
-  rowTextWrap: { flex: 1 },
-  rowLabel: { ...typeScale.body, color: colors.text },
-  rowHint: { ...typeScale.caption, color: colors.textFaint, marginTop: 2 },
-  rowValue: { ...typeScale.body, color: colors.textFaint },
-  rowRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  countBadge: {
-    backgroundColor: colors.accent,
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    paddingHorizontal: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  countBadgeText: { color: colors.white, fontSize: 10, fontWeight: '700' },
-  separator: { height: 1, backgroundColor: colors.border, marginLeft: spacing.md },
-  signOutButton: { marginTop: spacing.xl, alignItems: 'center', padding: spacing.md },
-  signOutText: { color: colors.danger, ...typeScale.subtitle },
-  deleteAccountButton: { alignItems: 'center', padding: spacing.md, marginBottom: spacing.xl },
-  deleteAccountText: { color: colors.textFaint, ...typeScale.caption },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg, padding: spacing.lg },
+    backBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginBottom: spacing.lg },
+    title: { ...typeScale.subtitle, color: colors.text },
+    sectionTitle: { ...typeScale.caption, color: colors.textFaint, marginBottom: spacing.sm, marginTop: spacing.lg, textTransform: 'uppercase' },
+    card: { backgroundColor: colors.surface, borderRadius: radius.md, overflow: 'hidden' },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.md,
+      gap: spacing.md,
+    },
+    rowTextWrap: { flex: 1 },
+    rowLabel: { ...typeScale.body, color: colors.text },
+    rowHint: { ...typeScale.caption, color: colors.textFaint, marginTop: 2 },
+    rowValue: { ...typeScale.body, color: colors.textFaint },
+    rowRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+    countBadge: {
+      backgroundColor: colors.accent,
+      borderRadius: 8,
+      minWidth: 16,
+      height: 16,
+      paddingHorizontal: 3,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    countBadgeText: { color: colors.white, fontSize: 10, fontWeight: '700' },
+    separator: { height: 1, backgroundColor: colors.border, marginLeft: spacing.md },
+    themeRow: { flexDirection: 'row', padding: spacing.sm, gap: spacing.sm },
+    themeOption: {
+      flex: 1,
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingVertical: spacing.md,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    themeOptionSelected: { borderColor: colors.primary, backgroundColor: colors.primaryMuted },
+    themeOptionText: { ...typeScale.caption, color: colors.textMuted, fontWeight: '600' },
+    themeOptionTextSelected: { color: colors.primary },
+    signOutButton: { marginTop: spacing.xl, alignItems: 'center', padding: spacing.md },
+    signOutText: { color: colors.danger, ...typeScale.subtitle },
+    deleteAccountButton: { alignItems: 'center', padding: spacing.md, marginBottom: spacing.xl },
+    deleteAccountText: { color: colors.textFaint, ...typeScale.caption },
+  });
+}

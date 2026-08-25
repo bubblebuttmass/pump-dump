@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { View, Text, Modal, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Badge } from '../lib/badges';
 import { useReducedMotion } from '../lib/useReducedMotion';
-import { colors, radius, spacing, type as typeScale, shadow } from '../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, shadow, ThemeColors } from '../lib/theme';
 
 interface CelebrationModalProps {
   visible: boolean;
@@ -16,6 +16,8 @@ interface CelebrationModalProps {
 }
 
 export function CelebrationModal({ visible, title, subtitle, badges, onDismiss }: CelebrationModalProps) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const reducedMotion = useReducedMotion();
   const scale = useSharedValue(0.6);
   const opacity = useSharedValue(0);
@@ -69,53 +71,55 @@ export function CelebrationModal({ visible, title, subtitle, badges, onDismiss }
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.xl,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 320,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.gold,
-    ...shadow.card,
-  },
-  iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: colors.primaryMuted,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  title: { ...typeScale.display, color: colors.text, textAlign: 'center' },
-  subtitle: { ...typeScale.body, color: colors.textMuted, textAlign: 'center', marginTop: spacing.xs },
-  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.lg },
-  badgeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.primaryMuted,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  badgeChipText: { ...typeScale.micro, color: colors.primary },
-  button: {
-    marginTop: spacing.xl,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-  },
-  buttonText: { color: colors.white, fontWeight: '700' },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: spacing.xl,
+    },
+    card: {
+      width: '100%',
+      maxWidth: 320,
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      padding: spacing.xl,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.gold,
+      ...shadow.card,
+    },
+    iconCircle: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: colors.primaryMuted,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: spacing.md,
+    },
+    title: { ...typeScale.display, color: colors.text, textAlign: 'center' },
+    subtitle: { ...typeScale.body, color: colors.textMuted, textAlign: 'center', marginTop: spacing.xs },
+    badgeRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.lg },
+    badgeChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      backgroundColor: colors.primaryMuted,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: radius.pill,
+    },
+    badgeChipText: { ...typeScale.micro, color: colors.primary },
+    button: {
+      marginTop: spacing.xl,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.xxl,
+      paddingVertical: spacing.md,
+      borderRadius: radius.md,
+    },
+    buttonText: { color: colors.white, fontWeight: '700' },
+  });
+}

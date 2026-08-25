@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +18,7 @@ import { getCurrentLocationOnce, getNearbyGyms, createGym, NearbyGym } from '../
 import { AnimatedScreen } from '../../../components/AnimatedScreen';
 import { PressableScale } from '../../../components/PressableScale';
 import { CelebrationModal } from '../../../components/CelebrationModal';
-import { colors, radius, spacing, type as typeScale } from '../../../lib/theme';
+import { useThemeColors, radius, spacing, type as typeScale, ThemeColors } from '../../../lib/theme';
 
 interface DraftSet extends NewSetInput {
   exerciseName: string;
@@ -47,6 +47,8 @@ const MAX_PHOTOS = 3;
 
 export default function LogWorkout() {
   const { session } = useAuth();
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [caption, setCaption] = useState('');
   const [muscleGroup, setMuscleGroup] = useState<string | null>(null);
@@ -315,6 +317,7 @@ export default function LogWorkout() {
         <TextInput
           style={[styles.input, styles.captionInput]}
           placeholder="What'd you hit today?"
+          placeholderTextColor={colors.textFaint}
           value={caption}
           onChangeText={setCaption}
           multiline
@@ -474,88 +477,90 @@ export default function LogWorkout() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: spacing.lg },
-  title: { ...typeScale.display, color: colors.text, marginBottom: spacing.lg },
-  label: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    color: colors.text,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  captionInput: { minHeight: 70, textAlignVertical: 'top', marginBottom: spacing.lg },
-  exerciseRow: { padding: spacing.md, borderBottomWidth: 1, borderColor: colors.border },
-  exerciseRowText: { ...typeScale.body, color: colors.text },
-  addCustom: { padding: spacing.md, color: colors.primary },
-  selected: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
-  row: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
-  flex1: { flex: 1 },
-  unitToggle: { padding: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md },
-  unitToggleText: { ...typeScale.body, color: colors.text, fontWeight: '600' },
-  button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.lg },
-  buttonText: { color: colors.white, fontWeight: '700' },
-  link: { color: colors.primary, marginTop: spacing.sm },
-  setRow: { paddingVertical: spacing.xs, color: colors.textMuted },
-  photoSection: { marginBottom: spacing.lg },
-  photoButton: { flex: 1, backgroundColor: colors.surface, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  photoButtonText: { color: colors.text, fontWeight: '600' },
-  thumbRow: { gap: spacing.sm },
-  thumbWrap: { position: 'relative' },
-  thumb: { width: 90, height: 90, borderRadius: radius.md },
-  thumbRemove: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: colors.danger,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addMoreTile: {
-    width: 90,
-    height: 90,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  photoCount: { ...typeScale.micro, color: colors.textFaint, marginTop: spacing.xs },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
-  chip: {
-    paddingHorizontal: spacing.md + 2,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
-  chipTextSelected: { color: colors.white },
-  liftsSection: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderColor: colors.border },
-  gymPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: spacing.xs,
-    backgroundColor: colors.primaryMuted,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    marginBottom: spacing.sm,
-  },
-  gymPillText: { ...typeScale.caption, color: colors.primary, fontWeight: '600' },
-  gymSection: { marginBottom: spacing.md },
-  gymSpinner: { marginVertical: spacing.sm },
-  gymHint: { ...typeScale.caption, color: colors.textFaint, marginBottom: spacing.sm },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    scroll: { padding: spacing.lg },
+    title: { ...typeScale.display, color: colors.text, marginBottom: spacing.lg },
+    label: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      color: colors.text,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    captionInput: { minHeight: 70, textAlignVertical: 'top', marginBottom: spacing.lg },
+    exerciseRow: { padding: spacing.md, borderBottomWidth: 1, borderColor: colors.border },
+    exerciseRowText: { ...typeScale.body, color: colors.text },
+    addCustom: { padding: spacing.md, color: colors.primary },
+    selected: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
+    row: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+    flex1: { flex: 1 },
+    unitToggle: { padding: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md },
+    unitToggleText: { ...typeScale.body, color: colors.text, fontWeight: '600' },
+    button: { backgroundColor: colors.primary, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.lg },
+    buttonText: { color: colors.white, fontWeight: '700' },
+    link: { color: colors.primary, marginTop: spacing.sm },
+    setRow: { paddingVertical: spacing.xs, color: colors.textMuted },
+    photoSection: { marginBottom: spacing.lg },
+    photoButton: { flex: 1, backgroundColor: colors.surface, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    photoButtonText: { color: colors.text, fontWeight: '600' },
+    thumbRow: { gap: spacing.sm },
+    thumbWrap: { position: 'relative' },
+    thumb: { width: 90, height: 90, borderRadius: radius.md },
+    thumbRemove: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      backgroundColor: colors.danger,
+      borderRadius: 10,
+      width: 20,
+      height: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    addMoreTile: {
+      width: 90,
+      height: 90,
+      borderRadius: radius.md,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderStyle: 'dashed',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    photoCount: { ...typeScale.micro, color: colors.textFaint, marginTop: spacing.xs },
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
+    chip: {
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.pill,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+    chipText: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
+    chipTextSelected: { color: colors.white },
+    liftsSection: { marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderColor: colors.border },
+    gymPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: spacing.xs,
+      backgroundColor: colors.primaryMuted,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.pill,
+      marginBottom: spacing.sm,
+    },
+    gymPillText: { ...typeScale.caption, color: colors.primary, fontWeight: '600' },
+    gymSection: { marginBottom: spacing.md },
+    gymSpinner: { marginVertical: spacing.sm },
+    gymHint: { ...typeScale.caption, color: colors.textFaint, marginBottom: spacing.sm },
+  });
+}
