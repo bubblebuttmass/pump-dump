@@ -118,13 +118,13 @@ export function FeedCard({ post, index = STAGGER_CAP, onOpen, onOpenUser, onTogg
 
       {post.photos.length === 1 ? (
         <Pressable onPress={handlePhotoPress}>
-          <PhotoCarousel photos={post.photos} height={260} style={styles.photo} />
+          <PhotoCarousel photos={post.photos} style={styles.photo} />
           <Animated.View style={[styles.burst, burstStyle]} pointerEvents="none">
             <Ionicons name="heart" size={84} color={colors.white} />
           </Animated.View>
         </Pressable>
       ) : post.photos.length > 1 ? (
-        <PhotoCarousel photos={post.photos} height={260} style={styles.photo} />
+        <PhotoCarousel photos={post.photos} style={styles.photo} />
       ) : null}
 
       {post.caption && <Text style={styles.caption}>{post.caption}</Text>}
@@ -232,7 +232,9 @@ function createStyles(colors: ThemeColors) {
       borderRadius: radius.sm,
     },
     prBadgeText: { ...typeScale.micro, color: colors.black },
-    photo: { width: '100%', height: 260, borderRadius: radius.md, marginTop: spacing.md },
+    // Height is no longer fixed here -- PhotoCarousel sizes itself off the
+    // photo's own aspect ratio (clamped) instead of being force-cropped.
+    photo: { width: '100%', marginTop: spacing.md },
     gymRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
     gymText: { ...typeScale.micro, color: colors.textFaint },
     burst: {

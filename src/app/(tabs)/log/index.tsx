@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Switch } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -50,6 +50,12 @@ export default function LogWorkout() {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [photoUris, setPhotoUris] = useState<string[]>([]);
+  // Off by default -- posts keep each photo's natural size instead of being
+  // auto-cropped. Turning this on gets you the native crop/zoom tool, same
+  // as Instagram's square-crop option, but expo-image-picker can't combine
+  // allowsEditing with multi-select, so it also switches library picks to
+  // one photo at a time while it's on (see handleChoosePhoto).
+  const [cropEnabled, setCropEnabled] = useState(false);
   const [caption, setCaption] = useState('');
   const [muscleGroup, setMuscleGroup] = useState<string | null>(null);
   const [showLifts, setShowLifts] = useState(false);
@@ -78,18 +84,26 @@ export default function LogWorkout() {
       showAlert('Camera access needed', 'Enable camera access in settings to snap your pump.');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.7, allowsEditing: true, aspect: [1, 1] });
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.7,
+      ...(cropEnabled ? { allowsEditing: true, aspect: [1, 1] as [number, number] } : {}),
+    });
     if (!result.canceled) setPhotoUris((prev) => [...prev, result.assets[0].uri]);
   }
 
   async function handleChoosePhoto() {
     if (photoUris.length >= MAX_PHOTOS) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.7,
-      allowsMultipleSelection: true,
-      selectionLimit: MAX_PHOTOS - photoUris.length,
-    });
+    // allowsEditing and allowsMultipleSelection can't be combined in
+    // expo-image-picker -- when the crop toggle is on, fall back to picking
+    // (and cropping) one photo at a time instead of the usual multi-select.
+    const result = cropEnabled
+      ? await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, allowsEditing: true, aspect: [1, 1] })
+      : await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          quality: 0.7,
+          allowsMultipleSelection: true,
+          selectionLimit: MAX_PHOTOS - photoUris.length,
+        });
     if (!result.canceled) {
       setPhotoUris((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS));
     }
@@ -277,6 +291,21 @@ export default function LogWorkout() {
         <Text style={styles.title}>Share your pump</Text>
 
         <View style={styles.photoSection}>
+          <View style={styles.cropToggleRow}>
+            <View style={styles.cropToggleTextWrap}>
+              <Text style={styles.cropToggleLabel}>Crop to square</Text>
+              <Text style={styles.cropToggleHint}>
+                {cropEnabled ? 'Photos you add will use the square crop tool.' : 'Off keeps each photo at its normal size.'}
+              </Text>
+            </View>
+            <Switch
+              value={cropEnabled}
+              onValueChange={setCropEnabled}
+              trackColor={{ true: colors.primary, false: colors.surfaceRaised }}
+              thumbColor={colors.white}
+              accessibilityLabel="Crop photos to square"
+            />
+          </View>
           {photoUris.length > 0 ? (
             <>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbRow}>
@@ -506,6 +535,16 @@ function createStyles(colors: ThemeColors) {
     link: { color: colors.primary, marginTop: spacing.sm },
     setRow: { paddingVertical: spacing.xs, color: colors.textMuted },
     photoSection: { marginBottom: spacing.lg },
+    cropToggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    cropToggleTextWrap: { flex: 1 },
+    cropToggleLabel: { ...typeScale.caption, color: colors.text, fontWeight: '600' },
+    cropToggleHint: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
     photoButton: { flex: 1, backgroundColor: colors.surface, padding: spacing.md + 2, borderRadius: radius.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
     photoButtonText: { color: colors.text, fontWeight: '600' },
     thumbRow: { gap: spacing.sm },
