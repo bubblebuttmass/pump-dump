@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, FlatList, StyleSheet, useWindowDimensions, StyleProp, ViewStyle, Image as RNImage } from 'react-native';
 import { Image } from 'expo-image';
+import { SkeletonBlock } from './Skeleton';
 import { useThemeColors, radius, spacing, ThemeColors } from '../lib/theme';
 
 // A "normal" post keeps its photo's natural aspect ratio instead of being
@@ -10,31 +11,55 @@ import { useThemeColors, radius, spacing, ThemeColors } from '../lib/theme';
 const MIN_ASPECT_RATIO = 4 / 5;
 const MAX_ASPECT_RATIO = 1.91;
 
+// Ratios are measured once per URI and kept here for the app's lifetime, so
+// a photo already seen this session (scroll away and back, a like toggling
+// a re-render, revisiting the feed tab) paints at its real size on the very
+// first frame instead of re-measuring.
+const aspectRatioCache = new Map<string, number>();
+
 // Image.getSize (not expo-image, which has no equivalent static) works for
 // both remote https URLs and local file:// URIs, so this covers a post
 // that's already uploaded and one still being composed. Only the first
 // photo's ratio is used -- see PhotoCarousel's comment for why.
-function useAspectRatio(uri: string | undefined, fallback: number): number {
-  const [ratio, setRatio] = useState(fallback);
+//
+// Returns null while the ratio is still unknown. Callers must not render the
+// photo at a guessed ratio in that window -- that's what used to cause a
+// visible pop (photo renders square, then snaps to its real aspect once
+// getSize resolves). Show a skeleton instead and mount the image only once
+// its real size is known, so it never has to resize after appearing.
+function useAspectRatio(uri: string | undefined, fallback: number): number | null {
+  const [ratio, setRatio] = useState<number | null>(() => (uri ? aspectRatioCache.get(uri) ?? null : null));
 
   useEffect(() => {
-    if (!uri) return;
+    if (!uri) {
+      setRatio(null);
+      return;
+    }
+    const cached = aspectRatioCache.get(uri);
+    if (cached !== undefined) {
+      setRatio(cached);
+      return;
+    }
+    setRatio(null);
     let cancelled = false;
     RNImage.getSize(
       uri,
       (width, height) => {
         if (cancelled || !width || !height) return;
-        setRatio(Math.min(MAX_ASPECT_RATIO, Math.max(MIN_ASPECT_RATIO, width / height)));
+        const clamped = Math.min(MAX_ASPECT_RATIO, Math.max(MIN_ASPECT_RATIO, width / height));
+        aspectRatioCache.set(uri, clamped);
+        setRatio(clamped);
       },
       () => {
         // Couldn't read dimensions (e.g. a since-evicted local file cache) --
-        // keep the fallback rather than leaving the post with no height.
+        // fall back rather than leaving the post on a loading skeleton forever.
+        if (!cancelled) setRatio(fallback);
       }
     );
     return () => {
       cancelled = true;
     };
-  }, [uri]);
+  }, [uri, fallback]);
 
   return ratio;
 }
@@ -55,11 +80,16 @@ export function PhotoCarousel({ photos, style, edgeInset = spacing.md }: PhotoCa
   const { width: screenWidth } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const itemWidth = screenWidth - edgeInset * 2;
-  const aspectRatio = useAspectRatio(photos[0], 1);
-  const height = itemWidth / aspectRatio;
+  const aspectRatio = useAspectRatio(photos[0], MIN_ASPECT_RATIO);
+  const loading = aspectRatio === null;
+  const height = itemWidth / (aspectRatio ?? MIN_ASPECT_RATIO);
 
   if (photos.length <= 1) {
-    return photos[0] ? (
+    if (!photos[0]) return null;
+    if (loading) {
+      return <SkeletonBlock style={[style, { width: '100%', aspectRatio: MIN_ASPECT_RATIO, borderRadius: radius.md }] as any} />;
+    }
+    return (
       <Image
         source={{ uri: photos[0] }}
         // style, not [{...defaults}, style] -- the caller's margin/etc.
@@ -70,7 +100,11 @@ export function PhotoCarousel({ photos, style, edgeInset = spacing.md }: PhotoCa
         transition={200}
         cachePolicy="memory-disk"
       />
-    ) : null;
+    );
+  }
+
+  if (loading) {
+    return <SkeletonBlock style={[style, { height, borderRadius: radius.md }] as any} />;
   }
 
   return (
