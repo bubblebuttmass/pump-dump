@@ -6,6 +6,10 @@ export interface Comment {
   display_name: string;
   body: string;
   created_at: string;
+  // null for a top-level comment. A reply always points at the top-level
+  // comment it belongs to -- replying to a reply flattens into the same
+  // thread rather than nesting further (see addComment).
+  parent_comment_id: string | null;
 }
 
 export async function toggleLike(userId: string, workoutId: string, currentlyLiked: boolean): Promise<void> {
@@ -21,7 +25,7 @@ export async function toggleLike(userId: string, workoutId: string, currentlyLik
 export async function getComments(workoutId: string): Promise<Comment[]> {
   const { data, error } = await supabase
     .from('comments')
-    .select('id, user_id, body, created_at, users:user_id ( display_name )')
+    .select('id, user_id, body, created_at, parent_comment_id, users:user_id ( display_name )')
     .eq('workout_id', workoutId)
     .order('created_at', { ascending: true });
   if (error) throw error;
@@ -31,14 +35,20 @@ export async function getComments(workoutId: string): Promise<Comment[]> {
     display_name: c.users?.display_name ?? 'Unknown',
     body: c.body,
     created_at: c.created_at,
+    parent_comment_id: c.parent_comment_id ?? null,
   }));
 }
 
-export async function addComment(userId: string, workoutId: string, body: string): Promise<Comment> {
+// parentCommentId should always be a *top-level* comment's id. Replying to a
+// reply is handled by the caller flattening it to that reply's top-level
+// parent (with an @mention prefixed into the body) -- the backend only
+// tracks one level, so a reply-to-a-reply here would silently orphan itself
+// under a comment that's itself a reply.
+export async function addComment(userId: string, workoutId: string, body: string, parentCommentId?: string | null): Promise<Comment> {
   const { data, error } = await supabase
     .from('comments')
-    .insert({ user_id: userId, workout_id: workoutId, body })
-    .select('id, user_id, body, created_at, users:user_id ( display_name )')
+    .insert({ user_id: userId, workout_id: workoutId, body, parent_comment_id: parentCommentId ?? null })
+    .select('id, user_id, body, created_at, parent_comment_id, users:user_id ( display_name )')
     .single();
   if (error) throw error;
   return {
@@ -47,6 +57,7 @@ export async function addComment(userId: string, workoutId: string, body: string
     display_name: (data as any).users?.display_name ?? 'Unknown',
     body: data.body,
     created_at: data.created_at,
+    parent_comment_id: data.parent_comment_id ?? null,
   };
 }
 

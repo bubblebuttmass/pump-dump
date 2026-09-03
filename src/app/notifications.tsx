@@ -15,6 +15,8 @@ function describeNotification(n: AppNotification): string {
       return 'liked your pump';
     case 'comment':
       return 'commented on your pump';
+    case 'comment_reply':
+      return 'replied to your comment';
     case 'follow':
       return 'started following you';
   }
@@ -96,7 +98,13 @@ export default function Notifications() {
                 <Text style={styles.rowTime}>{formatRelativeTime(item.createdAt)}</Text>
               </View>
               <Ionicons
-                name={item.type === 'like' ? 'heart' : item.type === 'comment' ? 'chatbubble' : 'person-add'}
+                name={
+                  item.type === 'like'
+                    ? 'heart'
+                    : item.type === 'comment' || item.type === 'comment_reply'
+                      ? 'chatbubble'
+                      : 'person-add'
+                }
                 size={16}
                 color={colors.textFaint}
               />

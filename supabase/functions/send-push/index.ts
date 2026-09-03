@@ -10,6 +10,7 @@ const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 const MESSAGES: Record<string, (actorName: string) => string> = {
   like: (actorName) => `${actorName} liked your pump`,
   comment: (actorName) => `${actorName} commented on your pump`,
+  comment_reply: (actorName) => `${actorName} replied to your comment`,
   follow: (actorName) => `${actorName} started following you`,
 };
 
