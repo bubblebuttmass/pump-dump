@@ -4,6 +4,7 @@ export default function WorkoutLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="[id]" />
+      <Stack.Screen name="share/[id]" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

@@ -66,6 +66,12 @@
           "icon": "./assets/images/android-icon-monochrome.png",
           "color": "#e63946"
         }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Pump Dump saves your shareable workout card to your photos so you can post it anywhere."
+        }
       ]
     ],
     "experiments": {

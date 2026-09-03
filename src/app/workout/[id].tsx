@@ -24,7 +24,25 @@ export default function WorkoutDetailScreen() {
   const [detail, setDetail] = useState<WorkoutDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState('');
+  const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const listRef = useRef<FlatList>(null);
+  const commentInputRef = useRef<TextInput>(null);
+
+  // Single level of threading: top-level comments, each with their direct
+  // replies grouped underneath. A reply's parent_comment_id always points
+  // at a top-level comment (see handleReply for how replying to a reply
+  // gets flattened into that), so this grouping never needs to recurse.
+  const topLevelComments = useMemo(() => comments.filter((c) => !c.parent_comment_id), [comments]);
+  const repliesByParent = useMemo(() => {
+    const map = new Map<string, Comment[]>();
+    for (const c of comments) {
+      if (!c.parent_comment_id) continue;
+      const existing = map.get(c.parent_comment_id);
+      if (existing) existing.push(c);
+      else map.set(c.parent_comment_id, [c]);
+    }
+    return map;
+  }, [comments]);
 
   // KeyboardAvoidingView's padding math is calibrated for the regular
   // keyboard; switching to the emoji keyboard (taller, with its category
@@ -70,15 +88,22 @@ export default function WorkoutDetailScreen() {
     }
   }
 
-  async function handleShare() {
+  function handleShare() {
     if (!detail) return;
-    try {
-      await Share.share({
-        message: `${detail.display_name} on Pump Dump${detail.caption ? `: ${detail.caption}` : ''}\nlifterapp://workout/${detail.id}`,
-      });
-    } catch {
-      // user dismissed the share sheet
+    // A post with a photo gets the branded share card (photo + muscle group
+    // + watermark, exportable as an image for Instagram/etc) -- that's
+    // strictly better than a text share whenever there's a photo to build it
+    // from. A photo-less post (sets/caption only) has nothing for the card
+    // to composite onto, so it keeps the plain text share.
+    if (detail.photos.length > 0) {
+      router.push({ pathname: '/workout/share/[id]', params: { id: detail.id } });
+      return;
     }
+    Share.share({
+      message: `${detail.display_name} on Pump Dump${detail.caption ? `: ${detail.caption}` : ''}\nlifterapp://workout/${detail.id}`,
+    }).catch(() => {
+      // user dismissed the share sheet
+    });
   }
 
   function handleDelete() {
@@ -119,17 +144,38 @@ export default function WorkoutDetailScreen() {
     );
   }
 
+  function handleReply(comment: Comment) {
+    // Replying to a reply threads under that reply's own top-level parent
+    // and mentions who's actually being replied to -- the backend only
+    // tracks one level of nesting, so pointing at the reply itself would
+    // orphan this under a parent that's not actually top-level.
+    const topLevelId = comment.parent_comment_id ?? comment.id;
+    setReplyingTo({ id: topLevelId, name: comment.display_name });
+    setCommentText(`@${comment.display_name} `);
+    commentInputRef.current?.focus();
+  }
+
+  function handleCancelReply() {
+    setReplyingTo(null);
+    setCommentText('');
+  }
+
   async function handleAddComment() {
     if (!session?.user || !detail || commentText.trim().length === 0) return;
     const body = commentText.trim();
+    const parentCommentId = replyingTo?.id ?? null;
     const tempId = `temp-${Date.now()}`;
     // "You" is a placeholder, not a guess at the real display name -- the
     // optimistic row only lives on screen for the moment before the insert
     // resolves and swaps in the server's version (with the real name).
-    setComments((prev) => [...prev, { id: tempId, user_id: session.user.id, display_name: 'You', body, created_at: new Date().toISOString() }]);
+    setComments((prev) => [
+      ...prev,
+      { id: tempId, user_id: session.user.id, display_name: 'You', body, created_at: new Date().toISOString(), parent_comment_id: parentCommentId },
+    ]);
     setCommentText('');
+    setReplyingTo(null);
     try {
-      const created = await addComment(session.user.id, detail.id, body);
+      const created = await addComment(session.user.id, detail.id, body, parentCommentId);
       setComments((prev) => prev.map((c) => (c.id === tempId ? created : c)));
     } catch (e: any) {
       setComments((prev) => prev.filter((c) => c.id !== tempId));
@@ -250,25 +296,59 @@ export default function WorkoutDetailScreen() {
         ListFooterComponent={
           <View style={styles.comments}>
             <Text style={styles.commentsTitle}>Comments</Text>
-            {comments.length === 0 && <Text style={styles.emptyComments}>No comments yet. Say something.</Text>}
-            {comments.map((c) => (
-              <View key={c.id} style={styles.commentRow}>
-                <Text style={styles.comment}>
-                  <Text style={styles.commentAuthor}>{c.display_name}: </Text>
-                  {c.body}
-                </Text>
-                <Text style={styles.commentTime}>{formatRelativeTime(c.created_at)}</Text>
+            {topLevelComments.length === 0 && <Text style={styles.emptyComments}>No comments yet. Say something.</Text>}
+            {topLevelComments.map((c) => (
+              <View key={c.id}>
+                <View style={styles.commentRow}>
+                  <Text style={styles.comment}>
+                    <Text style={styles.commentAuthor}>{c.display_name}: </Text>
+                    {c.body}
+                  </Text>
+                  <View style={styles.commentMetaRow}>
+                    <Text style={styles.commentTime}>{formatRelativeTime(c.created_at)}</Text>
+                    {!c.id.startsWith('temp-') && (
+                      <Pressable onPress={() => handleReply(c)} hitSlop={8}>
+                        <Text style={styles.replyButton}>Reply</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                </View>
+                {(repliesByParent.get(c.id) ?? []).map((r) => (
+                  <View key={r.id} style={[styles.commentRow, styles.replyRow]}>
+                    <Text style={styles.comment}>
+                      <Text style={styles.commentAuthor}>{r.display_name}: </Text>
+                      {r.body}
+                    </Text>
+                    <View style={styles.commentMetaRow}>
+                      <Text style={styles.commentTime}>{formatRelativeTime(r.created_at)}</Text>
+                      {!r.id.startsWith('temp-') && (
+                        <Pressable onPress={() => handleReply(r)} hitSlop={8}>
+                          <Text style={styles.replyButton}>Reply</Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
+                ))}
               </View>
             ))}
+            {replyingTo && (
+              <View style={styles.replyingBanner}>
+                <Text style={styles.replyingText}>Replying to {replyingTo.name}</Text>
+                <Pressable onPress={handleCancelReply} hitSlop={8} accessibilityRole="button" accessibilityLabel="Cancel reply">
+                  <Ionicons name="close" size={14} color={colors.textFaint} />
+                </Pressable>
+              </View>
+            )}
             <View style={styles.commentInputRow}>
               <TextInput
+                ref={commentInputRef}
                 style={styles.commentInput}
                 placeholder="Add a comment..."
                 placeholderTextColor={colors.textFaint}
                 value={commentText}
                 onChangeText={setCommentText}
                 onFocus={handleCommentFocus}
-                accessibilityLabel="Add a comment"
+                accessibilityLabel={replyingTo ? `Reply to ${replyingTo.name}` : 'Add a comment'}
               />
               <Pressable onPress={handleAddComment} hitSlop={8}>
                 <Text style={styles.postButton}>Post</Text>
@@ -319,10 +399,24 @@ function createStyles(colors: ThemeColors) {
     commentsTitle: { ...typeScale.subtitle, color: colors.text, marginBottom: spacing.sm },
     emptyComments: { ...typeScale.caption, color: colors.textFaint, fontStyle: 'italic', marginBottom: spacing.sm },
     commentRow: { paddingVertical: spacing.xs },
+    replyRow: { marginLeft: spacing.lg, borderLeftWidth: 2, borderColor: colors.border, paddingLeft: spacing.sm },
     comment: { ...typeScale.body, color: colors.text },
     commentAuthor: { fontWeight: '700' },
-    commentTime: { ...typeScale.micro, color: colors.textFaint, marginTop: 2 },
-    commentInputRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, alignItems: 'center' },
+    commentMetaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 },
+    commentTime: { ...typeScale.micro, color: colors.textFaint },
+    replyButton: { ...typeScale.micro, color: colors.textMuted, fontWeight: '700' },
+    replyingBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.surfaceRaised,
+      borderRadius: radius.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      marginTop: spacing.md,
+    },
+    replyingText: { ...typeScale.caption, color: colors.textMuted },
+    commentInputRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, alignItems: 'center' },
     commentInput: {
       flex: 1,
       borderWidth: 1,

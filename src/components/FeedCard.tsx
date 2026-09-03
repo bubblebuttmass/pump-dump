@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, withDelay, Easing, FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { FeedPost } from '../lib/feed';
@@ -50,14 +51,18 @@ export function FeedCard({ post, index = STAGGER_CAP, onOpen, onOpenUser, onTogg
     burstOpacity.value = withDelay(350, withTiming(0, { duration: 250 }));
   }
 
-  async function handleShare() {
-    try {
-      await Share.share({
-        message: `${post.display_name} on Pump Dump${post.caption ? `: ${post.caption}` : ''}\nlifterapp://workout/${post.id}`,
-      });
-    } catch {
-      // user dismissed the share sheet -- nothing to handle
+  function handleShare() {
+    // Same rule as the workout detail screen's share button: a photo gets
+    // the branded share card, a photo-less post falls back to text.
+    if (post.photos.length > 0) {
+      router.push({ pathname: '/workout/share/[id]', params: { id: post.id } });
+      return;
     }
+    Share.share({
+      message: `${post.display_name} on Pump Dump${post.caption ? `: ${post.caption}` : ''}\nlifterapp://workout/${post.id}`,
+    }).catch(() => {
+      // user dismissed the share sheet -- nothing to handle
+    });
   }
 
   function handlePhotoPress() {

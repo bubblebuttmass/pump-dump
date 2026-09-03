@@ -17,3 +17,13 @@ export function formatRelativeTime(iso: string): string {
   const sameYear = date.getFullYear() === new Date().getFullYear();
   return date.toLocaleDateString(undefined, sameYear ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
 }
+
+// A relative time ("2h ago") reads fine in-feed but stops making sense once
+// a share card is exported and viewed later/elsewhere -- this always gives
+// an absolute date, the same tail-end format formatRelativeTime falls back
+// to once something ages out of the relative window.
+export function formatShortDate(iso: string): string {
+  const date = new Date(iso);
+  const sameYear = date.getFullYear() === new Date().getFullYear();
+  return date.toLocaleDateString(undefined, sameYear ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
+}
