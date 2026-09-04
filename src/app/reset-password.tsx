@@ -66,7 +66,9 @@ export default function ResetPassword() {
       return;
     }
     showAlert('Password updated', "You're all set.");
-    router.replace('/(tabs)/feed');
+    // Not a hardcoded feed destination -- '/' re-runs index.tsx's gate,
+    // in case this account's onboarding was somehow never finished.
+    router.replace('/');
   }
 
   if (status !== 'ready') {

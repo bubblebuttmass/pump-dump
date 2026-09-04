@@ -26,7 +26,11 @@ export default function Login() {
       showAlert('Login failed', error.message);
       return;
     }
-    router.replace('/(tabs)/feed');
+    // Not a hardcoded feed destination -- '/' re-runs index.tsx's gate,
+    // which is the one place that knows whether this account (an existing
+    // one logging back in with onboarding still incomplete from an earlier
+    // interrupted signup) still needs onboarding rather than the feed.
+    router.replace('/');
   }
 
   async function handleGoogleLogin() {
@@ -49,7 +53,11 @@ export default function Login() {
         : null;
       if (access_token && refresh_token) {
         await supabase.auth.setSession({ access_token, refresh_token });
-        router.replace('/(tabs)/feed');
+        // Not a hardcoded feed destination -- '/' re-runs index.tsx's gate,
+        // which is the one place that knows whether this account (new via
+        // OAuth, and so still needing onboarding) should land there instead
+        // of the feed.
+        router.replace('/');
       }
     }
   }
@@ -74,7 +82,12 @@ export default function Login() {
         showAlert('Apple sign-in failed', error.message);
         return;
       }
-      router.replace('/(tabs)/feed');
+      // Not a hardcoded feed destination -- '/' re-runs index.tsx's gate,
+      // which is the one place that knows whether this account (new via
+      // OAuth, or an existing one logging back in with onboarding still
+      // incomplete from an earlier interrupted signup) still needs
+      // onboarding rather than the feed.
+      router.replace('/');
     } catch (e: any) {
       if (e.code !== 'ERR_REQUEST_CANCELED') showAlert('Apple sign-in failed', String(e));
     }

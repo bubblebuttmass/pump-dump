@@ -9,7 +9,7 @@ import { ThemeProvider, useTheme } from '../lib/theme';
 import { Sentry } from '../lib/sentry';
 
 function RootNavigation() {
-  const { session, loading } = useAuth();
+  const { session, loading, onboardingComplete } = useAuth();
   const { colors, scheme } = useTheme();
   const segments = useSegments();
   const router = useRouter();
@@ -19,7 +19,7 @@ function RootNavigation() {
     // The bare root path is handled declaratively by src/app/index.tsx's
     // <Redirect>. Racing an imperative redirect here against that one
     // corrupts the web navigator's stack, so skip it.
-    const [first] = segments;
+    const [first, second] = segments as readonly string[];
     if (first === undefined) return;
     const inAuthGroup = first === '(auth)';
     // reset-password briefly has no session (before the recovery link's
@@ -27,13 +27,22 @@ function RootNavigation() {
     // either state here would yank the user away mid-flow, so this route is
     // exempt from both branches and manages its own navigation.
     const isPasswordReset = first === 'reset-password';
+    const isOnboarding = inAuthGroup && second === 'onboarding';
 
     if (!session && !inAuthGroup && !isPasswordReset) {
       router.replace('/(auth)/login');
-    } else if (session && inAuthGroup) {
-      router.replace('/(tabs)/feed');
+    } else if (session && inAuthGroup && !isOnboarding) {
+      // A signed-in user on login/signup (navigated back manually, or a
+      // stale screen from before session resolved) belongs at onboarding or
+      // the feed depending on which they've actually finished -- not always
+      // the feed, or an account with onboarding still incomplete would get
+      // bounced straight past it exactly like the bug this whole gate
+      // exists to close. Leave onboardingComplete === null (still
+      // resolving) alone; this effect re-runs once it settles.
+      if (onboardingComplete === false) router.replace('/(auth)/onboarding');
+      else if (onboardingComplete === true) router.replace('/(tabs)/feed');
     }
-  }, [session, loading, segments]);
+  }, [session, loading, segments, onboardingComplete]);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {

@@ -182,5 +182,27 @@ export async function updateProfile(userId: string, update: ProfileUpdate): Prom
       ...(update.avatarUrl ? { avatar_url: update.avatarUrl } : {}),
     })
     .eq('id', userId);
+  if (error) throw toProfileSaveError(error);
+}
+
+// users_display_name_lower_unique is the source of truth -- this is just a
+// fast, non-authoritative pre-check so the UI can tell someone a name is
+// taken before they even hit save, not a replacement for it.
+export async function isUsernameTaken(displayName: string, excludingUserId: string): Promise<boolean> {
+  const trimmed = displayName.trim();
+  if (trimmed.length === 0) return false;
+  const { data, error } = await supabase.from('users').select('id').eq('display_name', trimmed).neq('id', excludingUserId).limit(1);
   if (error) throw error;
+  return (data?.length ?? 0) > 0;
+}
+
+const POSTGRES_UNIQUE_VIOLATION = '23505';
+
+// Postgres's raw "duplicate key value violates unique constraint
+// users_display_name_lower_unique" is meaningless to a user -- this turns it
+// into copy someone can act on. Also the backstop for the race
+// isUsernameTaken can't catch (two people submitting the same name at once).
+export function toProfileSaveError(error: any): Error {
+  if (error?.code === POSTGRES_UNIQUE_VIOLATION) return new Error('That display name is already taken.');
+  return error;
 }
