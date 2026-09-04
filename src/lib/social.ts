@@ -1,16 +1,11 @@
 import { supabase } from './supabase';
+import type { Comment } from './comments';
 
-export interface Comment {
-  id: string;
-  user_id: string;
-  display_name: string;
-  body: string;
-  created_at: string;
-  // null for a top-level comment. A reply always points at the top-level
-  // comment it belongs to -- replying to a reply flattens into the same
-  // thread rather than nesting further (see addComment).
-  parent_comment_id: string | null;
-}
+// Re-exported so existing callers (`import { Comment } from './social'`)
+// don't need to know the type actually lives in comments.ts -- it's defined
+// there instead of here so the pure thread-grouping logic can be unit
+// tested without pulling in supabase.ts (see comments.ts's own note).
+export type { Comment };
 
 export async function toggleLike(userId: string, workoutId: string, currentlyLiked: boolean): Promise<void> {
   if (currentlyLiked) {

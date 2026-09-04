@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useFocusEffect, router, Href } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { getWorkoutDetail, WorkoutDetail, toggleLike, getComments, addComment, Comment } from '../../lib/social';
+import { groupCommentsIntoThreads } from '../../lib/comments';
 import { toggleBookmark } from '../../lib/bookmarks';
 import { deleteWorkout } from '../../lib/workouts';
 import { reportContent } from '../../lib/moderation';
@@ -32,17 +33,9 @@ export default function WorkoutDetailScreen() {
   // replies grouped underneath. A reply's parent_comment_id always points
   // at a top-level comment (see handleReply for how replying to a reply
   // gets flattened into that), so this grouping never needs to recurse.
-  const topLevelComments = useMemo(() => comments.filter((c) => !c.parent_comment_id), [comments]);
-  const repliesByParent = useMemo(() => {
-    const map = new Map<string, Comment[]>();
-    for (const c of comments) {
-      if (!c.parent_comment_id) continue;
-      const existing = map.get(c.parent_comment_id);
-      if (existing) existing.push(c);
-      else map.set(c.parent_comment_id, [c]);
-    }
-    return map;
-  }, [comments]);
+  // groupCommentsIntoThreads is a pure function (lib/comments.ts, unit
+  // tested there) rather than inlined here.
+  const threads = useMemo(() => groupCommentsIntoThreads(comments), [comments]);
 
   // KeyboardAvoidingView's padding math is calibrated for the regular
   // keyboard; switching to the emoji keyboard (taller, with its category
@@ -296,8 +289,8 @@ export default function WorkoutDetailScreen() {
         ListFooterComponent={
           <View style={styles.comments}>
             <Text style={styles.commentsTitle}>Comments</Text>
-            {topLevelComments.length === 0 && <Text style={styles.emptyComments}>No comments yet. Say something.</Text>}
-            {topLevelComments.map((c) => (
+            {threads.length === 0 && <Text style={styles.emptyComments}>No comments yet. Say something.</Text>}
+            {threads.map(({ comment: c, replies }) => (
               <View key={c.id}>
                 <View style={styles.commentRow}>
                   <Text style={styles.comment}>
@@ -313,7 +306,7 @@ export default function WorkoutDetailScreen() {
                     )}
                   </View>
                 </View>
-                {(repliesByParent.get(c.id) ?? []).map((r) => (
+                {replies.map((r) => (
                   <View key={r.id} style={[styles.commentRow, styles.replyRow]}>
                     <Text style={styles.comment}>
                       <Text style={styles.commentAuthor}>{r.display_name}: </Text>
