@@ -1,8 +1,7 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Image as RNImage } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { radius, spacing } from '../lib/theme';
 
 interface ShareCardProps {
   photoUri: string;
@@ -16,12 +15,19 @@ interface ShareCardProps {
   onImageReady?: () => void;
 }
 
-// Fixed portrait shape (Instagram feed's 4:5 -- the same clamp PhotoCarousel
-// already uses at its tall end) regardless of the source photo's own aspect
-// ratio. A shareable card needs one predictable shape to look right dropped
-// into another app, so this crops to fill rather than adapting per-photo the
-// way the in-feed carousel does.
-export const SHARE_CARD_ASPECT_RATIO = 4 / 5;
+// Instagram/Snapchat Story canvas (1080x1920), not the 4:5 feed crop this
+// used to use. "Add to Story" drops the shared image in as a full-bleed
+// background on that 9:16 canvas -- a 4:5 image gets letterboxed, leaving
+// the platform's own default background visible top and bottom. This is
+// also why ShareCard has no rounded corners: rounding would leave the four
+// corners transparent in the exported PNG, showing through the same way.
+export const SHARE_CARD_ASPECT_RATIO = 9 / 16;
+
+// Export resolution independent of whatever the on-screen preview happens
+// to be sized at (see share/[id].tsx, which fits the preview to the
+// device's screen and asks view-shot to resize the capture up to this).
+export const SHARE_CARD_EXPORT_WIDTH = 1080;
+export const SHARE_CARD_EXPORT_HEIGHT = 1920;
 
 // Deliberately NOT theme-aware (no useThemeColors): this renders to a flat
 // image that gets posted outside the app entirely, so it must look the same
@@ -35,6 +41,11 @@ export const ShareCard = forwardRef<View, ShareCardProps>(function ShareCard(
   ref
 ) {
   const height = width / SHARE_CARD_ASPECT_RATIO;
+  // Every size below is a fraction of `width` rather than a fixed point
+  // value -- the on-screen preview and the final export are the same view
+  // at different scales (view-shot just resizes the raster), so proportions
+  // have to hold regardless of what width the preview happens to render at.
+  const styles = useMemo(() => createStyles(width), [width]);
   return (
     <View ref={ref} collapsable={false} style={[styles.card, { width, height }]}>
       <Image source={{ uri: photoUri }} style={StyleSheet.absoluteFillObject} contentFit="cover" onLoadEnd={onImageReady} />
@@ -63,22 +74,28 @@ export const ShareCard = forwardRef<View, ShareCardProps>(function ShareCard(
   );
 });
 
-const styles = StyleSheet.create({
-  card: { borderRadius: radius.lg, overflow: 'hidden', backgroundColor: '#000' },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    padding: spacing.lg,
-  },
-  statBlock: { flex: 1, marginRight: spacing.sm },
-  muscleGroup: { color: '#ffffff', fontSize: 30, fontWeight: '800', letterSpacing: 0.5 },
-  meta: { color: 'rgba(255,255,255,0.85)', fontSize: 14, fontWeight: '600', marginTop: 4 },
-  watermark: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  watermarkIcon: { width: 16, height: 16 },
-  watermarkText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
-});
+function createStyles(width: number) {
+  return StyleSheet.create({
+    // No borderRadius/overflow here on purpose -- see the aspect-ratio
+    // comment above. Rounded-corner treatment for the in-app preview lives
+    // in a wrapper View in the share screen instead, outside what gets
+    // captured.
+    card: { backgroundColor: '#000' },
+    footer: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
+      padding: width * 0.045,
+    },
+    statBlock: { flex: 1, marginRight: width * 0.023 },
+    muscleGroup: { color: '#ffffff', fontSize: width * 0.086, fontWeight: '800', letterSpacing: 0.3 },
+    meta: { color: 'rgba(255,255,255,0.85)', fontSize: width * 0.04, fontWeight: '600', marginTop: width * 0.011 },
+    watermark: { flexDirection: 'row', alignItems: 'center', gap: width * 0.017 },
+    watermarkIcon: { width: width * 0.046, height: width * 0.046 },
+    watermarkText: { color: '#ffffff', fontSize: width * 0.037, fontWeight: '700' },
+  });
+}

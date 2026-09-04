@@ -10,7 +10,12 @@ import { getWorkoutDetail, WorkoutDetail } from '../../../lib/social';
 import { formatShortDate } from '../../../lib/time';
 import { showAlert } from '../../../lib/alert';
 import { AnimatedScreen } from '../../../components/AnimatedScreen';
-import { ShareCard, SHARE_CARD_ASPECT_RATIO } from '../../../components/ShareCard';
+import {
+  ShareCard,
+  SHARE_CARD_ASPECT_RATIO,
+  SHARE_CARD_EXPORT_WIDTH,
+  SHARE_CARD_EXPORT_HEIGHT,
+} from '../../../components/ShareCard';
 import { useThemeColors, radius, spacing, type as typeScale, ThemeColors } from '../../../lib/theme';
 
 export default function ShareWorkoutScreen() {
@@ -18,12 +23,23 @@ export default function ShareWorkoutScreen() {
   const { session } = useAuth();
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const [detail, setDetail] = useState<WorkoutDetail | null>(null);
   const [photoReady, setPhotoReady] = useState(false);
   const [busy, setBusy] = useState<'share' | 'save' | null>(null);
   const cardRef = useRef<View>(null);
-  const cardWidth = screenWidth - spacing.lg * 2;
+
+  // A 9:16 card is much taller than it is wide, so sizing it off screen
+  // *width* the way the old 4:5 version did would make it taller than the
+  // screen has room for once the header/buttons are accounted for. Fit it
+  // to whichever dimension is tighter instead -- height, on basically every
+  // phone -- and derive width from that so the on-screen preview always
+  // fits. The actual exported file isn't tied to this size at all (see
+  // capture()), so shrinking the preview to fit never costs resolution.
+  const maxPreviewHeight = screenHeight * 0.56;
+  const maxPreviewWidthBound = (screenWidth - spacing.lg * 2) / SHARE_CARD_ASPECT_RATIO;
+  const cardHeight = Math.min(maxPreviewHeight, maxPreviewWidthBound);
+  const cardWidth = cardHeight * SHARE_CARD_ASPECT_RATIO;
 
   useEffect(() => {
     if (!session?.user || !id) return;
@@ -36,7 +52,16 @@ export default function ShareWorkoutScreen() {
   // lifetime for no real benefit.
   const capture = useCallback(async () => {
     if (!cardRef.current) return null;
-    return captureRef(cardRef, { format: 'png', quality: 1, result: 'tmpfile' });
+    // Fixed output size regardless of the preview's on-screen size (which
+    // varies by device) -- this is the actual Story canvas resolution, so
+    // the exported file always fills it edge-to-edge at full quality.
+    return captureRef(cardRef, {
+      format: 'png',
+      quality: 1,
+      result: 'tmpfile',
+      width: SHARE_CARD_EXPORT_WIDTH,
+      height: SHARE_CARD_EXPORT_HEIGHT,
+    });
   }, []);
 
   async function handleShare() {
@@ -100,17 +125,23 @@ export default function ShareWorkoutScreen() {
       ) : (
         <>
           <View style={styles.cardWrap}>
-            <ShareCard
-              ref={cardRef}
-              width={cardWidth}
-              photoUri={photoUri}
-              muscleGroup={detail.title ?? 'Workout'}
-              gymName={detail.gymName}
-              date={formatShortDate(detail.created_at)}
-              onImageReady={() => setPhotoReady(true)}
-            />
+            {/* Rounded corners are cosmetic, for this on-screen preview only
+                -- ShareCard itself (what cardRef points at, what actually
+                gets captured) stays a plain full-bleed rectangle, or the
+                exported PNG would have transparent corners. */}
+            <View style={[styles.previewFrame, { width: cardWidth, height: cardHeight }]}>
+              <ShareCard
+                ref={cardRef}
+                width={cardWidth}
+                photoUri={photoUri}
+                muscleGroup={detail.title ?? 'Workout'}
+                gymName={detail.gymName}
+                date={formatShortDate(detail.created_at)}
+                onImageReady={() => setPhotoReady(true)}
+              />
+            </View>
             {!photoReady && (
-              <View style={[styles.loadingOverlay, { width: cardWidth, height: cardWidth / SHARE_CARD_ASPECT_RATIO }]}>
+              <View style={[styles.loadingOverlay, { width: cardWidth, height: cardHeight }]}>
                 <ActivityIndicator color={colors.white} />
               </View>
             )}
@@ -174,6 +205,7 @@ function createStyles(colors: ThemeColors) {
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
     emptyText: { ...typeScale.body, color: colors.textFaint, textAlign: 'center' },
     cardWrap: { alignItems: 'center', marginTop: spacing.md },
+    previewFrame: { borderRadius: radius.lg, overflow: 'hidden' },
     loadingOverlay: {
       position: 'absolute',
       top: 0,
